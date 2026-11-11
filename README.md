@@ -62,6 +62,53 @@ If everything is set up correctly, you should see your new app running in the An
 
 This is one way to run your app — you can also build it directly from Android Studio or Xcode.
 
+## Environment variables (iOS)
+
+Environment config is handled by [`react-native-config`](https://github.com/react-native-config/react-native-config). Android is not wired up yet.
+
+### Env files
+
+Env files live in `apps/mobile/` and are committed: `.env.development` and `.env.production`. To add or change a value, edit those files directly.
+
+| Variable           | Purpose                                      |
+| ------------------ | -------------------------------------------- |
+| `APP_ENV`          | `development` or `production`                |
+| `APP_DISPLAY_NAME` | Home-screen app name (`CFBundleDisplayName`) |
+| `API_URL`          | Base URL of the backend API                  |
+
+> **Never put secrets in env files** — values are embedded in the app binary and can be extracted.
+
+### Which file is used
+
+The env file is chosen per Xcode **build configuration** in `apps/mobile/ios/Podfile` (`ENVFILES` map):
+
+| Build configuration | Env file           | Scheme                                               | Command         |
+| ------------------- | ------------------ | ---------------------------------------------------- | --------------- |
+| `Debug`             | `.env.development` | `ReactNativeDemo-Dev` / `ReactNativeDemo` (Run)      | `yarn ios:dev`  |
+| `Release`           | `.env.production`  | `ReactNativeDemo-Prod` / `ReactNativeDemo` (Archive) | `yarn ios:prod` |
+
+Search the Xcode build log for `ENVFILE=` to confirm which file was used. `pod install` fails if a mapped env file is missing, and the app throws at startup if a required variable is empty.
+
+### Using values
+
+- **JS/TS:** import the typed wrapper instead of `react-native-config` directly:
+
+  ```ts
+  import { env } from '~/config/env';
+
+  fetch(`${env.apiUrl}/health`);
+  ```
+
+- **Info.plist:** `INFOPLIST_PREPROCESS` is enabled, so any env key can be used as a bare macro (e.g. `<string>APP_DISPLAY_NAME</string>`). Avoid env keys that collide with other tokens in `Info.plist`.
+- **Native (Obj-C):** `#import "RNCConfig.h"` then `[RNCConfig envFor:@"API_URL"]`.
+
+### Adding a variable
+
+1. Add it to both `.env.development` and `.env.production`.
+2. Add it to `NativeConfig` in `apps/mobile/src/types/react-native-config.d.ts`.
+3. Expose it from `apps/mobile/src/config/env.ts` and the Jest mock in `apps/mobile/__mocks__/react-native-config.js`.
+4. Rebuild the native app (`yarn ios:dev`). Reloading Metro is **not** enough; if Info.plist values look stale, clean the build folder (Xcode ▸ Product ▸ Clean Build Folder).
+
 ## Step 3: Modify your app
 
 Now that you have successfully run the app, let's make changes!

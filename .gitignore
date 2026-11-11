@@ -40,6 +40,12 @@ local.properties
 node_modules/
 npm-debug.log
 yarn-error.log
+package-lock.json
+
+# Turborepo
+.turbo/
+dist/
+coverage/
 
 # fastlane
 #
@@ -58,13 +64,17 @@ yarn-error.log
 
 # Ruby / CocoaPods
 **/Pods/
-/vendor/bundle/
+**/vendor/bundle/
+
+# Environment files (react-native-config)
+# .env.development / .env.production are committed (non-secret, embedded in the app).
+.env
 
 # Temporary files created by Metro to check the health of the file watcher
 .metro-health-check*
 
 # testing
-/coverage
+**/coverage
 
 # Yarn
 .yarn/*

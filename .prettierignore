@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+.turbo
+vendor
+ios
+android
+yarn.lock
