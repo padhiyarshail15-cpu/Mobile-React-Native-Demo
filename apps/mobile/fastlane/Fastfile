@@ -1,0 +1,83 @@
+# Run from apps/mobile (Pods must be installed first: yarn pod:install or yarn pod:install:ci)
+#   bundle exec fastlane ios build variant:dev|prod
+#   bundle exec fastlane ios simulator variant:dev|prod   # no signing, no device needed
+#   bundle exec fastlane ios distribute   # dev build, then Firebase App Distribution upload
+
+default_platform(:ios)
+
+# Free Apple Developer team, used for automatic signing
+APPLE_TEAM_ID = 'WAP9785ZZA'.freeze
+
+VARIANTS = {
+  'dev' => { scheme: 'ReactNativeDemo-Dev', configuration: 'Debug' },
+  'prod' => { scheme: 'ReactNativeDemo-Prod', configuration: 'Release' },
+}.freeze
+
+def required_env(name)
+  ENV[name].to_s.strip.empty? && UI.user_error!("Missing environment variable #{name}")
+  ENV[name]
+end
+
+platform :ios do
+  desc 'Build a signed development IPA into dist/ios (variant:dev|prod)'
+  lane :build do |options|
+    variant = (options[:variant] || 'dev').to_s
+    config = VARIANTS[variant] || UI.user_error!("Unknown variant '#{variant}', use dev or prod")
+
+    build_app(
+      workspace: 'ios/ReactNativeDemo.xcworkspace',
+      scheme: config[:scheme],
+      configuration: config[:configuration],
+      export_method: 'development',
+      export_options: {
+        method: 'development',
+        teamID: APPLE_TEAM_ID,
+        signingStyle: 'automatic',
+      },
+      # Override manual signing in the project so Xcode manages the profile and device registration
+      xcargs: "DEVELOPMENT_TEAM=#{APPLE_TEAM_ID} CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates",
+      export_xcargs: '-allowProvisioningUpdates',
+      output_directory: 'dist/ios',
+      output_name: "ReactNativeDemo-#{variant}.ipa",
+    )
+  end
+
+  desc 'Build the app for the iOS Simulator (no signing, no device needed) and zip the .app into dist/ios'
+  lane :simulator do |options|
+    variant = (options[:variant] || 'dev').to_s
+    config = VARIANTS[variant] || UI.user_error!("Unknown variant '#{variant}', use dev or prod")
+    derived_data = File.expand_path('../dist/ios/DerivedData', __dir__)
+
+    xcodebuild(
+      workspace: 'ios/ReactNativeDemo.xcworkspace',
+      scheme: config[:scheme],
+      configuration: config[:configuration],
+      sdk: 'iphonesimulator',
+      destination: 'generic/platform=iOS Simulator',
+      derivedDataPath: derived_data,
+      xcargs: 'CODE_SIGNING_ALLOWED=NO',
+      build: true,
+    )
+
+    products = File.join(derived_data, 'Build', 'Products', "#{config[:configuration]}-iphonesimulator")
+    app = Dir[File.join(products, '*.app')].first || UI.user_error!("No .app found in #{products}")
+    zip_path = File.expand_path("../dist/ios/ReactNativeDemo-#{variant}-simulator.zip", __dir__)
+    # ditto keeps the bundle's symlinks and metadata, which plain zip can break
+    sh("ditto -c -k --keepParent '#{app}' '#{zip_path}'")
+    UI.success("Simulator app: #{zip_path}")
+  end
+
+  desc 'Build the dev IPA and upload it to Firebase App Distribution'
+  lane :distribute do |options|
+    variant = (options[:variant] || 'dev').to_s
+    build(variant: variant)
+
+    firebase_app_distribution(
+      app: required_env('FIREBASE_APP_ID'),
+      service_credentials_file: required_env('FIREBASE_SERVICE_CREDENTIALS_FILE'),
+      ipa_path: lane_context[SharedValues::IPA_OUTPUT_PATH],
+      groups: ENV['FIREBASE_TESTER_GROUPS'] || 'testers',
+      release_notes: "#{variant} build #{ENV['BUILD_NUMBER'] || 'local'} (#{ENV['GIT_COMMIT'] || 'uncommitted'})",
+    )
+  end
+end
