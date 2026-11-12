@@ -41,6 +41,7 @@ pipeline {
     HUSKY = '0' // git hooks are for developer machines, not CI
     FASTLANE_SKIP_UPDATE_CHECK = '1'
     FASTLANE_OPT_OUT_USAGE = '1'
+    FASTLANE_SKIP_DOCS = '1' // stops fastlane writing fastlane/README.md into the workspace
   }
 
   stages {
