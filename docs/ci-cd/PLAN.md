@@ -10,7 +10,7 @@
 
 - **Ruby:** the system Ruby (2.6.10) is used. Homebrew, rbenv and `.ruby-version` are not needed. `apps/mobile/Gemfile` already requires `ruby >= 2.6.10`, and fastlane 2.229.0 installs on it.
 - **Jenkins:** reuse the existing `~/.jenkins` home and the same ngrok URL (`https://headcount-doctrine-dispersed.ngrok-free.dev/`).
-- **GitHub credentials:** new IDs, `github-pat-mobile` and `github-webhook-secret-mobile`. The Tech-Service IDs `github-pat` and `github-webhook-secret` are not touched.
+- **GitHub credentials:** new IDs, `github-pat-mobile` and `github-webhook-secret-mobile` (optional, not used while the global shared secret is empty). The Tech-Service IDs `github-pat` and `github-webhook-secret` are not touched.
 - **Signing:** automatic signing with the free team `WAP9785ZZA`. The dev IPA uses the Debug configuration.
 - **Limits:** free-team builds expire after 7 days and install only on up to 3 iPhones registered through Xcode.
 
@@ -46,5 +46,5 @@
 ## Jenkins wiring (operational, outside the repo)
 
 - One Multibranch Pipeline job for this repo, scanning branches and the root `Jenkinsfile`.
-- One GitHub webhook: `https://headcount-doctrine-dispersed.ngrok-free.dev/github-webhook/` (JSON content type), using the `github-webhook-secret-mobile` secret.
+- One GitHub webhook: `https://headcount-doctrine-dispersed.ngrok-free.dev/github-webhook/` (JSON content type), with no secret. The global GitHub shared secret in Jenkins stays empty, as for Tech-Service, and the job also polls every minute.
 - See [JENKINS_SETUP.md](./JENKINS_SETUP.md) and [FIREBASE_SETUP.md](./FIREBASE_SETUP.md).

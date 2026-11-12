@@ -11,12 +11,14 @@ This is the one-time setup for the Jenkins job that builds this repo. The steps 
 
 Add these in **Manage Jenkins → Credentials → (global)**. Do not reuse or edit the Tech-Service IDs.
 
-| ID                             | Kind                   | Value                                                                      |
-| ------------------------------ | ---------------------- | -------------------------------------------------------------------------- |
-| `github-pat-mobile`            | Username with password | GitHub user and a PAT with repo read access                                |
-| `github-webhook-secret-mobile` | Secret text            | Random string, also set on the GitHub webhook                              |
-| `firebase-app-id`              | Secret text            | Firebase Android/iOS app ID (see [FIREBASE_SETUP.md](./FIREBASE_SETUP.md)) |
-| `firebase-service-account`     | Secret file            | Service-account JSON (see [FIREBASE_SETUP.md](./FIREBASE_SETUP.md))        |
+| ID                             | Kind                   | Value                                                                                       |
+| ------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------- |
+| `github-pat-mobile`            | Username with password | GitHub user and a PAT scoped to this repo (see below)                                       |
+| `github-webhook-secret-mobile` | Secret text            | Optional. Not used while the global GitHub shared secret is empty (see the webhook section) |
+| `firebase-app-id`              | Secret text            | Firebase Android/iOS app ID (see [FIREBASE_SETUP.md](./FIREBASE_SETUP.md))                  |
+| `firebase-service-account`     | Secret file            | Service-account JSON (see [FIREBASE_SETUP.md](./FIREBASE_SETUP.md))                         |
+
+PAT permissions: use a fine-grained token limited to this repo with Contents (read), Metadata (read), Commit statuses (read and write), and Pull requests (read). If **Scan Repository Now** fails with a 403 or "could not find repository", use a classic token with only the `repo` scope instead.
 
 The two `firebase-*` credentials are only needed for the optional `DISTRIBUTE_FIREBASE` stage, so you can add them later.
 
@@ -25,17 +27,21 @@ The two `firebase-*` credentials are only needed for the optional `DISTRIBUTE_FI
 1. **New Item** → name `Mobile-React-Native-Demo` → **Multibranch Pipeline**.
 2. **Branch Sources** → **GitHub** → repository `padhiyarshail15-cpu/Mobile-React-Native-Demo`, credentials `github-pat-mobile`.
 3. **Build Configuration** → mode **by Jenkinsfile**, script path `Jenkinsfile`.
-4. **Scan Repository Triggers**: enable periodic scan as a fallback (for example, 1 day).
-5. Save. Jenkins scans the branches and runs the root `Jenkinsfile`.
+4. **Scan Repository Triggers**: tick **Periodically if not otherwise run** and set the interval to 1 minute, the same as the Tech-Service job. Builds start by polling even if the webhook isn't working.
+5. Save, then click **Scan Repository Now**. Jenkins finds the branches and pull requests that contain a `Jenkinsfile`.
 
 ## 4. GitHub webhook
+
+The webhook makes builds start immediately instead of waiting for the next poll. Like Tech-Service, leave **Manage Jenkins → System → GitHub → Advanced → Shared secret** empty. With no shared secret configured, Jenkins doesn't check the webhook signature.
 
 On the repo (**Settings → Webhooks → Add webhook**):
 
 - **Payload URL:** `https://headcount-doctrine-dispersed.ngrok-free.dev/github-webhook/`
 - **Content type:** `application/json`
-- **Secret:** the same value as the `github-webhook-secret-mobile` credential
+- **Secret:** leave empty
 - **Events:** push and pull requests
+
+Start Jenkins and ngrok first, then add the webhook. Check **Recent Deliveries** on the webhook for a 200 response.
 
 ## 5. Mac build agent
 
