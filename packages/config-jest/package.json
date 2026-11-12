@@ -6,5 +6,8 @@
   "peerDependencies": {
     "@react-native/jest-preset": "*",
     "jest": "*"
+  },
+  "devDependencies": {
+    "jest-junit": "^17.0.0"
   }
 }

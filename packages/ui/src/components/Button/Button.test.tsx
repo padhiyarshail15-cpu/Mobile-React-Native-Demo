@@ -1,46 +1,42 @@
-import type { ReactElement } from 'react';
-
-import { Text } from 'react-native';
-
-import ReactTestRenderer, { act } from 'react-test-renderer';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { Button } from './Button';
 
-function render(element: ReactElement) {
-  let renderer!: ReturnType<typeof ReactTestRenderer.create>;
-
-  act(() => {
-    renderer = ReactTestRenderer.create(element);
-  });
-
-  return renderer;
-}
-
 describe('Button', () => {
   it('renders the title', () => {
-    const renderer = render(<Button title="Save" />);
+    render(<Button title="Save" />);
 
-    expect(renderer.root.findByType(Text).props.children).toBe('Save');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeOnTheScreen();
   });
 
   it('calls onPress when pressed', () => {
     const onPress = jest.fn();
-    const renderer = render(<Button title="Save" onPress={onPress} />);
+    render(<Button title="Save" onPress={onPress} />);
 
-    act(() => {
-      renderer.root
-        .findByProps({ accessibilityRole: 'button' })
-        .props.onPress();
-    });
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 
-  it('is disabled while loading', () => {
-    const renderer = render(<Button title="Save" loading />);
+  it('does not call onPress when disabled', () => {
+    const onPress = jest.fn();
+    render(<Button title="Save" disabled onPress={onPress} />);
 
-    expect(
-      renderer.root.findByProps({ accessibilityRole: 'button' }).props.disabled
-    ).toBe(true);
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it('is disabled and busy while loading', () => {
+    const onPress = jest.fn();
+    render(<Button title="Save" loading onPress={onPress} />);
+
+    const button = screen.getByRole('button');
+    fireEvent.press(button);
+
+    expect(button).toBeDisabled();
+    expect(button).toBeBusy();
+    expect(screen.queryByText('Save')).not.toBeOnTheScreen();
+    expect(onPress).not.toHaveBeenCalled();
   });
 });

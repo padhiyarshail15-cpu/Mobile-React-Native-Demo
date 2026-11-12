@@ -1,0 +1,3 @@
+# Bundle identifiers differ per variant (dev: com.mobile.reactnativedemo.dev, prod: com.mobile.reactnativedemo),
+# so they are not set here. The Apple team is shared by both.
+team_id('WAP9785ZZA')

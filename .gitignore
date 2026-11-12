@@ -76,6 +76,17 @@ coverage/
 # testing
 **/coverage
 
+# CI test reports (jest-junit, read by Jenkins)
+reports/
+
+# Code signing and distribution secrets (never commit)
+*.mobileprovision
+*.p12
+*.cer
+*.certSigningRequest
+*.keychain
+*service-account*.json
+
 # Yarn
 .yarn/*
 !.yarn/patches
