@@ -6,3 +6,4 @@ vendor
 ios
 android
 yarn.lock
+**/fastlane/README.md
