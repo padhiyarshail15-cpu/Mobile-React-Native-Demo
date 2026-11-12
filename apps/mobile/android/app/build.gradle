@@ -117,3 +117,11 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// react-native-config: Debug uses .env.development, Release uses .env.production (same as iOS).
+// Set ENVFILE (for example ENVFILE=.env.development) to override, as Fastlane does for dev release builds.
+project.ext.envConfigFiles = [
+    debug: ".env.development",
+    release: ".env.production",
+]
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"

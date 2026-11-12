@@ -1,7 +1,9 @@
-# Run from apps/mobile (Pods must be installed first: yarn pod:install or yarn pod:install:ci)
+# Run from apps/mobile (iOS: Pods must be installed first, yarn pod:install or yarn pod:install:ci)
 #   bundle exec fastlane ios build variant:dev|prod
 #   bundle exec fastlane ios simulator variant:dev|prod   # no signing, no device needed
 #   bundle exec fastlane ios distribute   # dev build, then Firebase App Distribution upload
+#   bundle exec fastlane android build variant:dev|prod       # release APK into dist/android
+#   bundle exec fastlane android distribute                   # dev APK, then Firebase upload
 
 default_platform(:ios)
 
@@ -13,9 +15,19 @@ VARIANTS = {
   'prod' => { scheme: 'ReactNativeDemo-Prod', configuration: 'Release' },
 }.freeze
 
+# Same env files as iOS (Debug -> development, Release -> production), picked through ENVFILE
+ANDROID_ENV_FILES = {
+  'dev' => '.env.development',
+  'prod' => '.env.production',
+}.freeze
+
 def required_env(name)
   ENV[name].to_s.strip.empty? && UI.user_error!("Missing environment variable #{name}")
   ENV[name]
+end
+
+def release_notes(variant)
+  "#{variant} build #{ENV['BUILD_NUMBER'] || 'local'} (#{ENV['GIT_COMMIT'] || 'uncommitted'})"
 end
 
 platform :ios do
@@ -73,11 +85,53 @@ platform :ios do
     build(variant: variant)
 
     firebase_app_distribution(
-      app: required_env('FIREBASE_APP_ID'),
+      app: required_env('FIREBASE_IOS_APP_ID'),
       service_credentials_file: required_env('FIREBASE_SERVICE_CREDENTIALS_FILE'),
       ipa_path: lane_context[SharedValues::IPA_OUTPUT_PATH],
       groups: ENV['FIREBASE_TESTER_GROUPS'] || 'testers',
-      release_notes: "#{variant} build #{ENV['BUILD_NUMBER'] || 'local'} (#{ENV['GIT_COMMIT'] || 'uncommitted'})",
+      release_notes: release_notes(variant),
+    )
+  end
+end
+
+platform :android do
+  desc 'Build a release APK into dist/android (variant:dev|prod). Signed with the debug keystore, installable by testers'
+  lane :build do |options|
+    variant = (options[:variant] || 'dev').to_s
+    env_file = ANDROID_ENV_FILES[variant] || UI.user_error!("Unknown variant '#{variant}', use dev or prod")
+
+    # react-native-config (dotenv.gradle) reads ENVFILE relative to apps/mobile
+    ENV['ENVFILE'] = env_file
+
+    gradle(
+      project_dir: 'android',
+      task: 'assemble',
+      build_type: 'Release',
+      # Real devices (arm64) and Intel emulators (x86_64) only, which halves the native compile time
+      properties: { 'reactNativeArchitectures' => 'arm64-v8a,x86_64' },
+    )
+
+    built = lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH] || UI.user_error!('Gradle did not produce an APK')
+    dist = File.expand_path('../dist/android', __dir__)
+    FileUtils.mkdir_p(dist)
+    apk = File.join(dist, "ReactNativeDemo-#{variant}.apk")
+    FileUtils.cp(built, apk)
+    UI.success("APK: #{apk}")
+    apk
+  end
+
+  desc 'Build the dev APK and upload it to Firebase App Distribution'
+  lane :distribute do |options|
+    variant = (options[:variant] || 'dev').to_s
+    apk = build(variant: variant)
+
+    firebase_app_distribution(
+      app: required_env('FIREBASE_ANDROID_APP_ID'),
+      service_credentials_file: required_env('FIREBASE_SERVICE_CREDENTIALS_FILE'),
+      android_artifact_type: 'APK',
+      android_artifact_path: apk,
+      groups: ENV['FIREBASE_TESTER_GROUPS'] || 'testers',
+      release_notes: release_notes(variant),
     )
   end
 end

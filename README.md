@@ -64,7 +64,7 @@ This is one way to run your app — you can also build it directly from Android 
 
 ## Environment variables (iOS)
 
-Environment config is handled by [`react-native-config`](https://github.com/react-native-config/react-native-config). Android is not wired up yet.
+Environment config is handled by [`react-native-config`](https://github.com/react-native-config/react-native-config). On Android, `android/app/build.gradle` applies `dotenv.gradle` (Debug → `.env.development`, Release → `.env.production`; set `ENVFILE` to override).
 
 ### Env files
 
@@ -131,13 +131,13 @@ You've successfully run and modified your React Native App. :partying_face:
 
 # CI/CD
 
-Jenkins runs format, lint, typecheck and Jest on every branch, and publishes JUnit results. On `main` or from **Build with Parameters** (`BUILD_IOS`), Fastlane builds the iOS simulator app. With `DISTRIBUTE_FIREBASE` it also builds a signed dev IPA and uploads it to Firebase App Distribution (needs an iPhone registered to the Apple team).
+Jenkins runs format, lint, typecheck and Jest on every branch, and publishes JUnit results. On `main` or from **Build with Parameters** (`BUILD_ANDROID`, `BUILD_IOS`), Fastlane builds the Android APK and the iOS simulator app. Publishing to Firebase App Distribution is manual only: start a build with **Build with Parameters** and tick `DISTRIBUTE_ANDROID` or `DISTRIBUTE_IOS` (iOS needs an iPhone registered to the Apple team).
 
 - Jenkins pipeline: [`Jenkinsfile`](./Jenkinsfile)
-- Fastlane lanes: [`apps/mobile/fastlane/`](./apps/mobile/fastlane) (`ios simulator`, `ios build`, `ios distribute`, each with `variant:dev|prod`)
+- Fastlane lanes: [`apps/mobile/fastlane/`](./apps/mobile/fastlane) (`ios simulator|build|distribute`, `android build|distribute`, each with `variant:dev|prod`)
 - Setup and plan: [`docs/ci-cd/`](./docs/ci-cd) (`PLAN.md`, `JENKINS_SETUP.md`, `FIREBASE_SETUP.md`)
 
-Run the iOS lanes from `apps/mobile` after `yarn pod:install`. Fastlane uses the system Ruby (2.6.10). Run `bundle install` in `apps/mobile` first.
+Run the iOS lanes from `apps/mobile` after `yarn pod:install`, and the Android lanes with the Android SDK installed (`ANDROID_HOME`). Fastlane uses the system Ruby (2.6.10). Run `bundle install` in `apps/mobile` first.
 
 # Troubleshooting
 
