@@ -2,8 +2,8 @@
 #   bundle exec fastlane ios build variant:dev|prod
 #   bundle exec fastlane ios simulator variant:dev|prod   # no signing, no device needed
 #   bundle exec fastlane ios distribute   # dev build, then Firebase App Distribution upload
-#   bundle exec fastlane android build variant:dev|prod       # release APK into dist/android
-#   bundle exec fastlane android distribute                   # dev APK, then Firebase upload
+#   bundle exec fastlane android build variant:dev|prod       # release APK into dist/android (prod needs release keystore env vars)
+#   bundle exec fastlane android distribute                   # prod release APK, then Firebase upload
 
 default_platform(:ios)
 
@@ -95,10 +95,15 @@ platform :ios do
 end
 
 platform :android do
-  desc 'Build a release APK into dist/android (variant:dev|prod). Signed with the debug keystore, installable by testers'
+  desc 'Build a release APK into dist/android (variant:dev|prod). prod is signed with the release keystore (env vars required); dev falls back to the debug key'
   lane :build do |options|
     variant = (options[:variant] || 'dev').to_s
     env_file = ANDROID_ENV_FILES[variant] || UI.user_error!("Unknown variant '#{variant}', use dev or prod")
+
+    if variant == 'prod'
+      # Never publish a prod build signed with the debug key
+      %w[ANDROID_KEYSTORE_PATH ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD].each { |name| required_env(name) }
+    end
 
     # react-native-config (dotenv.gradle) reads ENVFILE relative to apps/mobile
     ENV['ENVFILE'] = env_file
@@ -120,9 +125,9 @@ platform :android do
     apk
   end
 
-  desc 'Build the dev APK and upload it to Firebase App Distribution'
+  desc 'Build the release APK (prod) and upload it to Firebase App Distribution'
   lane :distribute do |options|
-    variant = (options[:variant] || 'dev').to_s
+    variant = (options[:variant] || 'prod').to_s
     apk = build(variant: variant)
 
     firebase_app_distribution(

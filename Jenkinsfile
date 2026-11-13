@@ -32,7 +32,7 @@ pipeline {
     // All default to false. main always builds both apps; publishing only ever happens from a manual run.
     booleanParam(name: 'BUILD_ANDROID', defaultValue: false, description: 'Build the Android APK on any branch (main always does)')
     booleanParam(name: 'BUILD_IOS', defaultValue: false, description: 'Build the iOS simulator app on any branch (main always does)')
-    booleanParam(name: 'DISTRIBUTE_ANDROID', defaultValue: false, description: 'Manual runs only: build the dev APK and upload it to Firebase App Distribution')
+    booleanParam(name: 'DISTRIBUTE_ANDROID', defaultValue: false, description: 'Manual runs only: build a release-signed prod APK and upload it to Firebase App Distribution (needs the android-* release keystore credentials)')
     booleanParam(name: 'DISTRIBUTE_IOS', defaultValue: false, description: 'Manual runs only: build a signed dev IPA and upload it to Firebase App Distribution (needs an iPhone registered to the Apple team)')
   }
 
@@ -120,14 +120,19 @@ pipeline {
       steps {
         // Credentials are bound here, not in an environment block, so builds without this stage never need them.
         // FIREBASE_ANDROID_APP_ID is secret text; FIREBASE_SERVICE_CREDENTIALS_FILE is the path to the service-account JSON.
+        // The android-* credentials sign the release APK: keystore file path plus its passwords and alias.
         withCredentials([
           string(credentialsId: 'firebase-android-app-id', variable: 'FIREBASE_ANDROID_APP_ID'),
-          file(credentialsId: 'firebase-service-account', variable: 'FIREBASE_SERVICE_CREDENTIALS_FILE')
+          file(credentialsId: 'firebase-service-account', variable: 'FIREBASE_SERVICE_CREDENTIALS_FILE'),
+          file(credentialsId: 'android-release-keystore', variable: 'ANDROID_KEYSTORE_PATH'),
+          string(credentialsId: 'android-keystore-password', variable: 'ANDROID_KEYSTORE_PASSWORD'),
+          string(credentialsId: 'android-key-alias', variable: 'ANDROID_KEY_ALIAS'),
+          string(credentialsId: 'android-key-password', variable: 'ANDROID_KEY_PASSWORD')
         ]) {
           androidSh '''
             yarn workspace mobile bundle:install
             cd apps/mobile && BUILD_NUMBER="$BUILD_NUMBER" GIT_COMMIT="$(git rev-parse --short HEAD)" \
-              bundle exec fastlane android distribute
+              bundle exec fastlane android distribute variant:prod
           '''
         }
       }
