@@ -11,17 +11,21 @@ This is the one-time setup for the Jenkins job that builds this repo. The steps 
 
 Add these in **Manage Jenkins → Credentials → (global)**. Do not reuse or edit the Tech-Service IDs.
 
-| ID                             | Kind                   | Value                                                                                       |
-| ------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------- |
-| `github-pat-mobile`            | Username with password | GitHub user and a PAT scoped to this repo (see below)                                       |
-| `github-webhook-secret-mobile` | Secret text            | Optional. Not used while the global GitHub shared secret is empty (see the webhook section) |
-| `firebase-service-account`     | Secret file            | Service-account JSON, used by both platforms (see [FIREBASE_SETUP.md](./FIREBASE_SETUP.md)) |
-| `firebase-android-app-id`      | Secret text            | Firebase Android app ID, for `DISTRIBUTE_ANDROID`                                           |
-| `firebase-ios-app-id`          | Secret text            | Firebase iOS app ID, for `DISTRIBUTE_IOS`                                                   |
+| ID                             | Kind                   | Value                                                                                        |
+| ------------------------------ | ---------------------- | -------------------------------------------------------------------------------------------- |
+| `github-pat-mobile`            | Username with password | GitHub user and a PAT scoped to this repo (see below)                                        |
+| `github-webhook-secret-mobile` | Secret text            | Optional. Not used while the global GitHub shared secret is empty (see the webhook section)  |
+| `firebase-service-account`     | Secret file            | Service-account JSON, used by both platforms (see [FIREBASE_SETUP.md](./FIREBASE_SETUP.md))  |
+| `firebase-android-app-id`      | Secret text            | Firebase Android app ID, for `DISTRIBUTE_ANDROID`                                            |
+| `firebase-ios-app-id`          | Secret text            | Firebase iOS app ID, for `DISTRIBUTE_IOS`                                                    |
+| `android-release-keystore`     | Secret file            | Release keystore (`.jks`), for `DISTRIBUTE_ANDROID`. Keep a backup; losing it blocks updates |
+| `android-keystore-password`    | Secret text            | Password of the release keystore                                                             |
+| `android-key-alias`            | Secret text            | Key alias inside the release keystore                                                        |
+| `android-key-password`         | Secret text            | Password of that key                                                                         |
 
 PAT permissions: use a fine-grained token limited to this repo with Contents (read), Metadata (read), Commit statuses (read and write), and Pull requests (read). If **Scan Repository Now** fails with a 403 or "could not find repository", use a classic token with only the `repo` scope instead.
 
-The `firebase-*` credentials are only needed by the manual distribute stages, so you can add them later. A build that doesn't tick a `DISTRIBUTE_*` parameter never reads them.
+The `firebase-*` and `android-*` release credentials are only needed by the manual distribute stages, so you can add them later. A build that doesn't tick a `DISTRIBUTE_*` parameter never reads them. Builds on `main` and `BUILD_ANDROID` runs use the debug key and don't need the `android-*` credentials.
 
 ## 3. Multibranch Pipeline job
 
@@ -62,11 +66,11 @@ Start Jenkins and ngrok first, then add the webhook. Check **Recent Deliveries**
 - `main`: also builds the Android APK and the iOS simulator app, and archives `ReactNativeDemo-dev.apk` and `ReactNativeDemo-dev-simulator.zip`. Nothing is published.
 - **Build with Parameters** on any branch (the parameters appear after the branch has built once):
 
-| Parameter            | Effect                                                                                   |
-| -------------------- | ---------------------------------------------------------------------------------------- |
-| `BUILD_ANDROID`      | Build and archive the Android APK, without publishing                                    |
-| `BUILD_IOS`          | Build and archive the iOS simulator zip, without publishing                              |
-| `DISTRIBUTE_ANDROID` | Build the dev APK, upload it to Firebase App Distribution, and archive it                |
-| `DISTRIBUTE_IOS`     | Build a signed dev IPA, upload it to Firebase, and archive it. Needs a registered iPhone |
+| Parameter            | Effect                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| `BUILD_ANDROID`      | Build and archive the Android APK, without publishing                                     |
+| `BUILD_IOS`          | Build and archive the iOS simulator zip, without publishing                               |
+| `DISTRIBUTE_ANDROID` | Build the release-signed prod APK, upload it to Firebase App Distribution, and archive it |
+| `DISTRIBUTE_IOS`     | Build a signed dev IPA, upload it to Firebase, and archive it. Needs a registered iPhone  |
 
 - **Publishing is manual only.** The `DISTRIBUTE_*` stages run only when the parameter is ticked **and** a person started the build (`triggeredBy 'UserIdCause'`). Webhook pushes, branch scans, and `main` builds can never publish.

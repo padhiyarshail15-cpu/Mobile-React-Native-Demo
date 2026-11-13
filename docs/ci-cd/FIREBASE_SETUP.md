@@ -34,6 +34,7 @@ Start with Android. iOS is optional and blocked until a device is registered (se
 - **App Distribution → Testers & groups**: create a group with the alias `testers` (the lane default). To use another group, set the `FIREBASE_TESTER_GROUPS` environment variable on the Jenkins job.
 - Add tester email addresses to the group. Each tester gets an invite email the first time.
 - Testers open the email link on an Android phone, install the **Firebase App Tester** app (or the web link), and install the build. They need to allow installs from this source.
+- Switching from the old debug APK to the release APK: uninstall the old app first. Android refuses an update signed with a different key, so the install fails until the old version is removed. Uninstalling deletes the app's local data.
 - Without a physical phone, test with the Android Studio emulator: sign in to the Firebase App Tester or download the APK from the link, and install it.
 
 ## 5. Local test of the Android lane
@@ -48,7 +49,7 @@ bundle exec fastlane android build variant:dev       # APK in dist/android/
 bundle exec fastlane android distribute              # build and upload
 ```
 
-The build is a **release** APK signed with the project's debug keystore, so it runs without Metro and testers can install it. For a real store release you would need your own keystore (see the React Native "signed APK" guide).
+The build is a **release** APK. It's signed with the release keystore when `ANDROID_KEYSTORE_PATH` and the other `ANDROID_KEY_*` variables are set (the `distribute` lane and Jenkins do this), and falls back to the debug key otherwise. The `prod` variant refuses to build without the release keystore, so a published build is never debug-signed. For local tests, `variant:dev` works without any of this. Keep the release keystore backed up: a different key can't update an install that was signed with the old one.
 
 ## 6. iOS (optional, needs a registered iPhone)
 
