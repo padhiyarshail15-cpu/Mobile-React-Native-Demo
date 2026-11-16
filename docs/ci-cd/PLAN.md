@@ -18,8 +18,8 @@
 
 1. **Fastlane** (`apps/mobile/fastlane/`)
    - `ios build variant:dev|prod` builds an IPA into `apps/mobile/dist/ios/`.
-     - `dev`: scheme `ReactNativeDemo-Dev`, Debug, `com.mobile.reactnativedemo.dev`.
-     - `prod`: scheme `ReactNativeDemo-Prod`, Release, `com.mobile.reactnativedemo`.
+     - `dev`: scheme `ReactNativeDemo-Dev`, Debug, `com.climatelens.ai.dev`.
+     - `prod`: scheme `ReactNativeDemo-Prod`, Release, `com.climatelens.ai`.
    - `ios simulator variant:dev|prod` builds for the iOS Simulator with `CODE_SIGNING_ALLOWED=NO` and zips the `.app` to `apps/mobile/dist/ios/ReactNativeDemo-<variant>-simulator.zip`. No Apple account or device is needed.
    - `ios distribute` runs the dev build and uploads it with `firebase_app_distribution`. That action comes from the `fastlane-plugin-firebase_app_distribution` plugin (`fastlane/Pluginfile`, loaded from the Gemfile), so run `bundle install` in `apps/mobile` before using it.
    - `android build variant:dev|prod` runs `assembleRelease` and copies the APK to `apps/mobile/dist/android/ReactNativeDemo-<variant>.apk`. It uses the existing debug keystore, so testers can install it, and it bundles the JS so it runs without Metro. `ENVFILE` selects `.env.development` or `.env.production`. Only the `arm64-v8a` and `x86_64` ABIs are built, to save time.

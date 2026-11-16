@@ -17,7 +17,7 @@ Start with Android. iOS is optional and blocked until a device is registered (se
 ## 2. Android app in Firebase
 
 1. **Project settings → General → Add app → Android**.
-2. Package name: `com.reactnativedemo` (it must match `applicationId` in `apps/mobile/android/app/build.gradle`). Skip the `google-services.json` step: App Distribution doesn't need it.
+2. Package name: `com.climatelens.ai` (it must match `applicationId` in `apps/mobile/android/app/build.gradle`). Skip the `google-services.json` step: App Distribution doesn't need it.
 3. Copy the **App ID** (format `1:<number>:android:<hash>`). Store it in Jenkins as the secret text credential `firebase-android-app-id`.
 
 ## 3. Service account for uploads (once, both platforms)
@@ -58,7 +58,7 @@ The IPA is signed with automatic signing for team `WAP9785ZZA` and exported as a
 - Free team: only iPhones plugged into your Mac and added through **Xcode → Window → Devices and Simulators** can be registered. Up to **3 iPhones**, and each build **expires after 7 days**. You cannot add a tester's iPhone by UDID.
 - Paid Apple Developer Program: you can register testers' UDIDs and use an ad hoc build. This needs a lane change (`ad-hoc` export method and your paid team ID).
 - If the export fails with "Your team has no devices from which to generate a provisioning profile", no device is registered yet.
-- Add an iOS app in Firebase with bundle ID `com.mobile.reactnativedemo.dev` and store its App ID (`1:<number>:ios:<hash>`) in Jenkins as the secret text credential `firebase-ios-app-id`.
+- Add an iOS app in Firebase with bundle ID `com.climatelens.ai.dev` and store its App ID (`1:<number>:ios:<hash>`) in Jenkins as the secret text credential `firebase-ios-app-id`.
 - Fallback with no device: the simulator lane (`bundle exec fastlane ios simulator variant:dev`). A simulator build cannot be distributed.
 
 ```sh
