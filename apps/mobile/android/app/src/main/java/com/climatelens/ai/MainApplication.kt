@@ -1,4 +1,4 @@
-package com.reactnativedemo
+package com.climatelens.ai
 
 import android.app.Application
 import com.facebook.react.PackageList
