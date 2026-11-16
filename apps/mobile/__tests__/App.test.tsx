@@ -1,9 +1,6 @@
-import { Alert } from 'react-native';
-
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 
 import AppContainer from '../src/app/AppContainer';
-import HomeScreen from '../src/screens/HomeScreen';
 
 // SafeAreaProvider renders nothing until native insets arrive, so use the library's Jest mock.
 jest.mock(
@@ -11,34 +8,11 @@ jest.mock(
   () => jest.requireActual('react-native-safe-area-context/jest/mock').default
 );
 
-describe('HomeScreen', () => {
-  it('shows the loaded env', () => {
-    render(<HomeScreen />);
-
-    expect(screen.getByTestId('env-label')).toHaveTextContent(
-      'Loaded env: development'
-    );
-  });
-
-  it('alerts when the button is pressed', () => {
-    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-    render(<HomeScreen />);
-
-    fireEvent.press(screen.getByRole('button', { name: 'Press me please' }));
-
-    expect(alert).toHaveBeenCalledWith('Button pressed');
-    alert.mockRestore();
-  });
-});
-
 describe('AppContainer', () => {
-  it('renders the home tab inside the navigator', () => {
+  it('renders the home tab inside the navigator', async () => {
     render(<AppContainer />);
 
-    expect(screen.getByTestId('env-label')).toBeOnTheScreen();
-    expect(
-      screen.getByRole('button', { name: 'Press me please' })
-    ).toBeOnTheScreen();
+    expect(await screen.findByText('27.4 °C')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Explore' })).toBeOnTheScreen();
   });
 });

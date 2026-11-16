@@ -17,19 +17,22 @@ function renderNavigation() {
 }
 
 describe('RootNavigator', () => {
-  it('shows the four tabs and opens Home first', () => {
+  it('shows the four tabs and opens Home first', async () => {
     renderNavigation();
 
     ['Home', 'Explore', 'Ask AI', 'Profile'].forEach(label => {
       expect(screen.getByRole('button', { name: label })).toBeOnTheScreen();
     });
-    expect(screen.getByTestId('env-label')).toBeOnTheScreen();
+    expect(await screen.findByText('27.4 °C')).toBeOnTheScreen();
   });
 
-  it('switches to the tapped tab', () => {
+  it('switches to the tapped tab', async () => {
     renderNavigation();
+    await screen.findByText('27.4 °C');
 
-    fireEvent.press(screen.getByRole('button', { name: 'Ask AI' }));
+    const askAiButtons = screen.getAllByRole('button', { name: 'Ask AI' });
+    // The Home quick action comes first; the tab bar item is last.
+    fireEvent.press(askAiButtons[askAiButtons.length - 1]);
 
     expect(screen.getByTestId('placeholder-title')).toHaveTextContent('Ask AI');
   });
