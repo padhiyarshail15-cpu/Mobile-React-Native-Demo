@@ -43,10 +43,38 @@ Stack (unchanged from PDFs): RN CLI + TS, React Navigation, Axios + Zustand, Exp
 4. **Dashboard = climate, not weather.** No "today's temperature". Show annual mean, trend (°C/decade, computed by us and labelled as such), anomaly vs a stated baseline (e.g. 1991–2020).
 5. **Map**: `react-native-maps` needs a Google Maps API key on Android. Fallback if blocked: OSM `UrlTile` or a tappable location list. Keep to markers only.
 6. **Chart library**: RN 0.88 (new arch) compatibility must be spiked first (W4D2). Candidate: `react-native-gifted-charts` (SVG). Fallback: small custom `react-native-svg` line chart.
-7. **Design images** (arriving later): needed by **W1D3** (theme tokens). If late, build with neutral placeholder tokens; re-skin is isolated in `packages/ui` + `theme/`.
+7. **Design images** received; tokens from mockup `1000524102`; re-skin is isolated in `packages/ui` + `theme/`.
 8. **Content authoring (W7)** is the hidden time sink: limit to **6 topics + 12 actions**, each with a real source URL you verify yourself.
 9. **Add**: CI job for `apps/api` in Jenkins/lefthook (lint, typecheck, test) — reuses existing tooling.
 10. **Defer if behind** (in order): map styling → Academy quizzes → comparison charts (keep cards) → Take Action grouping polish. Never cut data provenance, core charts, or platform stability.
+
+## 2b. Design review (9 mockups in `docs/climatelens/design/`) — decisions
+
+**Consistent in all mockups:** 5 tabs in mockups, **4 tabs in app** (Home, Explore, AI, Profile) with Learn under Home quick actions; flows = onboarding, explore/location select, location details, history, compare, map, AI chat, Academy, Take Action, Profile/Settings. Primary tokens from `1000524102`.
+
+| Mockup feature                                                                        | Decision                                                                                                                                                                                  | Why                                                        |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Live weather on Home/Location (28°C Partly Cloudy, rain %, wind now, feels-like), AQI | **Hidden.** Home shows climate: annual mean temp, anomaly vs 1991–2020, rainfall, climate insight                                                                                         | Weather ≠ climate rule; NASA POWER has no live weather/AQI |
+| Humidity, wind, solar radiation cards                                                 | **Kept** as climatological monthly/annual means                                                                                                                                           | Available in NASA POWER (parameters verified W3D1)         |
+| Projection tab / "By 2050 +1.8°C (RCP 4.5)"                                           | **Hidden** in MVP; AI refuses projection answers and says no projection dataset is loaded                                                                                                 | No verified projection source; out of scope                |
+| Climate Map heatmap                                                                   | **Colour-coded temperature markers + legend**                                                                                                                                             | Heatmap needs gridded data/GIS                             |
+| "At Risk" chip, risk scores                                                           | **Removed**                                                                                                                                                                               | No unsupported risk scores                                 |
+| "Trending" chip                                                                       | Replaced by **Popular** (curated `is_popular`)                                                                                                                                            | No real trending data                                      |
+| "Nearby" chip / location permission                                                   | **Kept**: GPS → nearest supported location (≤150 km), else "not supported" message                                                                                                        | New `GET /locations/nearest`                               |
+| Location levels Area / Division                                                       | **Dropped**; levels = city, district, state, country (representative point)                                                                                                               | ~50 km resolution                                          |
+| Notifications permission + climate alerts                                             | **Deferred**                                                                                                                                                                              | Disaster/alerts out of scope; needs FCM/APNs               |
+| Sign-in / email profile                                                               | **Device-only profile** (AsyncStorage: units, saved + recent locations, chat history, completed actions)                                                                                  | No auth in MVP                                             |
+| Voice input, language selector, Copernicus source                                     | **Deferred** (English only; NASA POWER only)                                                                                                                                              | Scope                                                      |
+| "10-year avg" comparisons                                                             | **1991–2020 baseline**, labelled everywhere; 2026 (current year) compared against it                                                                                                      | 30-year climate normal                                     |
+| History ranges 1M/3M/6M                                                               | **Monthly/Yearly toggle; 1Y, 5Y, 10Y, All, Custom**                                                                                                                                       | Short ranges read as weather                               |
+| Hot-days count (>35°C), "-18% rain" sample AI text                                    | Sample copy only; values come from data. Hot-days indicator is a stretch (needs daily max temp ingestion)                                                                                 | Never fabricate values                                     |
+| "See Your Impact", "save 20–30% water"                                                | Impact tracker deferred; any quantified claim needs a sourced figure or is removed                                                                                                        | Don't overstate individual actions                         |
+| Onboarding / splash / app icon                                                        | **Built in Week 8** (user decision: features + backend first). Before then the app opens straight to Home with a default location                                                         | Focus                                                      |
+| Tabs (Week 1 decision)                                                                | 4 tabs: Home, Explore, AI, Profile. Learn (Academy) reached from Home quick actions. Projection hidden                                                                                    | Mockups show 5 tabs; user chose to fold Learn into Home    |
+| Commit cadence (Week 1 decision)                                                      | Commit each working piece as soon as it runs and passes tests, not at end of day                                                                                                          | Earlier review of code                                     |
+| Palette/typography                                                                    | `#0B6B4F` primary, `#14B8A6` secondary, `#3B82F6` accent, `#E8F7F1` surface, `#F8FAFC` bg, `#111827` text; Inter; Title 24/28 semibold, Heading 18/24 semibold, Body 14/20, Caption 12/16 | From mockup 1000524102                                     |
+
+**Assets (I create, SVG/vector):** app icon (leaf+globe), splash, 3 onboarding illustrations, empty/error/loading illustrations, gradient+skyline placeholders for city and article headers. Final photography can replace placeholders later.
 
 ## 3. Calendar (start Tue 2026-11-17)
 
@@ -65,58 +93,58 @@ Each working week runs **Tue–Mon** (Tue, Wed, Thu, Fri, Mon). Mon = buffer/ver
 
 ### Day-by-day (track · 2.5 h each)
 
-| Day  | Date       | Track     | Task                                                                                                 |
-| ---- | ---------- | --------- | ---------------------------------------------------------------------------------------------------- |
-| W1D1 | Tue 17 Nov | FE        | Verify Xcode/Pods/Android build of `apps/mobile`; add React Navigation + bottom tabs                 |
-| W1D2 | Wed 18 Nov | BE        | Scaffold `apps/api` (Express+TS, env via Zod, pino, `/health`, jest+supertest, turbo scripts)        |
-| W1D3 | Thu 19 Nov | FE        | Theme tokens/typography; Card/Header/StateView in `packages/ui` (**design images needed**)           |
-| W1D4 | Fri 20 Nov | FE        | Dashboard shell with labelled MOCK data + loading/error/empty; tests                                 |
-| W1D5 | Mon 23 Nov | Buffer    | Cross-platform check, README, commit; create Supabase + Render accounts; 30-min NASA POWER test call |
-| W2D1 | Tue 24 Nov | BE        | Supabase project, pooler URL, SQL migrations: `locations`, `datasets`                                |
-| W2D2 | Wed 25 Nov | BE        | Seed locations; `/locations/search`, `/locations/:id`; Zod; tests                                    |
-| W2D3 | Thu 26 Nov | FE        | Axios client (timeout/retry/error mapper), Zustand location store, search screen                     |
-| W2D4 | Fri 27 Nov | FE        | Selected-location header, resolution disclosure, wire to API, tests                                  |
-| W2D5 | Mon 30 Nov | Buffer    | Deploy API to Render; verify `/health`; **M1**                                                       |
-| W3D1 | Tue 1 Dec  | BE        | Provider spike: NASA POWER docs, coverage, units, licence/attribution, limits; save fixtures         |
-| W3D2 | Wed 2 Dec  | BE        | Adapter + normalisation + `climate_observations` table + ingestion script for seed locations         |
-| W3D3 | Thu 3 Dec  | BE        | `/climate/indicators`, `/climate/summary`, baseline + trend calc, provenance, tests vs fixtures      |
-| W3D4 | Fri 4 Dec  | FE        | Metric cards, states, source panel, dashboard integration                                            |
-| W3D5 | Mon 7 Dec  | Buffer    | Manually verify values vs NASA POWER; **M2**                                                         |
-| W4D1 | Tue 8 Dec  | BE        | `/climate/timeseries` (filtering, annual aggregates, gaps) + tests                                   |
-| W4D2 | Wed 9 Dec  | FE        | Chart library spike on RN 0.88; History screen skeleton                                              |
-| W4D3 | Thu 10 Dec | FE        | Temperature + rainfall charts, period selector, units                                                |
-| W4D4 | Fri 11 Dec | FE        | Source/method sheet, missing-year gaps, tests                                                        |
-| W4D5 | Mon 14 Dec | Buffer    | **M3**                                                                                               |
-| W5D1 | Tue 15 Dec | BE        | `POST /climate/compare` + compatibility rules; geo metadata in location payload                      |
-| W5D2 | Wed 16 Dec | FE        | Pick two locations; comparison cards/chart; mismatch messaging                                       |
-| W5D3 | Thu 17 Dec | FE        | Map setup (iOS/Android, API key), markers                                                            |
-| W5D4 | Fri 18 Dec | FE        | Map → location detail, resolution disclosure, tests                                                  |
-| W5D5 | Mon 21 Dec | Buffer    | **M4**                                                                                               |
-| W6D1 | Tue 22 Dec | BE        | Assistant design: intent extraction, retrieval, context + provenance IDs, system prompt              |
-| W6D2 | Wed 23 Dec | BE        | OpenAI call, response schema, citation validator, rate limit + budget cap, mocked tests              |
-| W6D3 | Thu 24 Dec | FE        | Chat UI + input + loading/error                                                                      |
-| W6D4 | Fri 25 Dec | FE        | Citation chips, limitations block, suggested questions, tests                                        |
-| W6D5 | Mon 28 Dec | Buffer    | 15-question eval set (supported / unsupported / attribution traps); **M5**                           |
-| W7D1 | Tue 29 Dec | BE        | Academy/actions schema + seed (6 topics, 12 actions, real sources); endpoints                        |
-| W7D2 | Wed 30 Dec | FE        | Topic list + detail                                                                                  |
-| W7D3 | Thu 31 Dec | FE        | Actions grouped (individual/household/community), evidence labels                                    |
-| W7D4 | Fri 1 Jan  | FE (flex) | Navigation + UI consistency polish                                                                   |
-| W7D5 | Mon 4 Jan  | Buffer    | **M6**                                                                                               |
-| W8D1 | Tue 5 Jan  | BE        | Security pass: Helmet, CORS, rate limits, secrets, RLS, logging, Render config                       |
-| W8D2 | Wed 6 Jan  | FE        | UI bugs, accessibility, app icon, splash                                                             |
-| W8D3 | Thu 7 Jan  | FE        | Offline/poor-network, performance, versioning                                                        |
-| W8D4 | Fri 8 Jan  | QA        | Full E2E on Android + iOS (lookup → history → compare → AI)                                          |
-| W8D5 | Mon 11 Jan | Release   | Fastlane beta builds, README, known limitations; **M7**                                              |
+| Day  | Date       | Track   | Task                                                                                                                                                                        |
+| ---- | ---------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W1D1 | Tue 17 Nov | FE      | Verify Xcode/Pods/Android build of `apps/mobile`; dynamic (component-based) React Navigation with 4 tabs; first tab = Home placeholder. Commit once it runs                 |
+| W1D2 | Wed 18 Nov | BE      | Scaffold `apps/api` (Express+TS, env via Zod, pino, `/health`, jest+supertest, turbo scripts)                                                                               |
+| W1D3 | Thu 19 Nov | FE      | Theme tokens (mockup 102), Inter font, Button/Card/Chip/Header/StateView + lucide icons + tab bar in `packages/ui`                                                          |
+| W1D4 | Fri 20 Nov | FE      | Home dashboard shell (climate card, metric cards, insight, quick actions) with SAMPLE DATA banner + loading/error/empty; tests                                              |
+| W1D5 | Mon 23 Nov | Buffer  | Cross-platform check, README, commit; create Supabase + Render accounts; 30-min NASA POWER test call                                                                        |
+| W2D1 | Tue 24 Nov | BE      | Supabase project, pooler URL, SQL migrations: `locations`, `datasets`                                                                                                       |
+| W2D2 | Wed 25 Nov | BE      | Seed locations (+`is_popular`); `/locations/search` (type/region filters), `/locations/popular`, `/locations/nearest`, `/locations/:id`; Zod; tests                         |
+| W2D3 | Thu 26 Nov | FE      | Axios client (timeout/retry/error mapper), persisted stores (settings, recents), Explore screen: search, type filter sheet, popular, recents, no-results                    |
+| W2D4 | Fri 27 Nov | FE      | Select-location flow, selected-location header, resolution note, 'Use my location' (permission + nearest), tests                                                            |
+| W2D5 | Mon 30 Nov | Buffer  | Deploy API to Render; verify `/health`; **M1**                                                                                                                              |
+| W3D1 | Tue 1 Dec  | BE      | Provider spike: NASA POWER docs, coverage, units, licence/attribution, limits; save fixtures                                                                                |
+| W3D2 | Wed 2 Dec  | BE      | Adapter + normalisation (temperature, precipitation, humidity, wind, solar) + `climate_observations` + ingestion script for seed locations                                  |
+| W3D3 | Thu 3 Dec  | BE      | `/climate/indicators`, `/climate/summary`, baseline + trend calc, provenance, tests vs fixtures                                                                             |
+| W3D4 | Fri 4 Dec  | FE      | Home + Location Details Overview wired to API: metric cards, insight, source panel, unavailable state; remove SAMPLE DATA                                                   |
+| W3D5 | Mon 7 Dec  | Buffer  | Manually verify values vs NASA POWER; **M2**                                                                                                                                |
+| W4D1 | Tue 8 Dec  | BE      | `/climate/timeseries` (filtering, annual aggregates, gaps) + tests                                                                                                          |
+| W4D2 | Wed 9 Dec  | FE      | Chart library spike on RN 0.88; History screen skeleton                                                                                                                     |
+| W4D3 | Thu 10 Dec | FE      | History charts (temperature, rainfall, humidity, solar), Monthly/Yearly toggle, period selector, units                                                                      |
+| W4D4 | Fri 11 Dec | FE      | Metric Details screen (expandable cards, min/max/range, data-source section), 'Data not available' state, missing-year gaps, tests                                          |
+| W4D5 | Mon 14 Dec | Buffer  | **M3**                                                                                                                                                                      |
+| W5D1 | Tue 15 Dec | BE      | `POST /climate/compare` + compatibility rules; geo metadata in location payload                                                                                             |
+| W5D2 | Wed 16 Dec | FE      | Pick two locations; comparison cards/chart; mismatch messaging                                                                                                              |
+| W5D3 | Thu 17 Dec | FE      | Map setup (iOS/Android, API key), colour-coded temperature markers + legend                                                                                                 |
+| W5D4 | Fri 18 Dec | FE      | Map → location detail, resolution disclosure, tests                                                                                                                         |
+| W5D5 | Mon 21 Dec | Buffer  | **M4**                                                                                                                                                                      |
+| W6D1 | Tue 22 Dec | BE      | Assistant design: intent extraction, retrieval, context + provenance IDs, system prompt                                                                                     |
+| W6D2 | Wed 23 Dec | BE      | OpenAI call, response schema, citation validator, rate limit + budget cap, mocked tests                                                                                     |
+| W6D3 | Thu 24 Dec | FE      | Chat UI + input + loading/error                                                                                                                                             |
+| W6D4 | Fri 25 Dec | FE      | Citation chips, limitations block, suggested questions, tests                                                                                                               |
+| W6D5 | Mon 28 Dec | Buffer  | 15-question eval set (supported / unsupported / attribution traps); **M5**                                                                                                  |
+| W7D1 | Tue 29 Dec | BE      | Academy/actions schema + seed (6 topics, 12 actions, real sources); endpoints                                                                                               |
+| W7D2 | Wed 30 Dec | FE      | Learn: search, categories (Basics/Impacts/Solutions/Policy), featured, article detail with sources                                                                          |
+| W7D3 | Thu 31 Dec | FE      | Take Action: categories (Home/Travel/Food/Work-School), action detail, local 'Mark as done', evidence labels                                                                |
+| W7D4 | Fri 1 Jan  | FE      | Profile: saved locations, chat history, my actions, Settings (units °C/°F, km/mi), About/Data Sources; nav consistency (Fri 1 Jan may be a holiday → shift into Mon buffer) |
+| W7D5 | Mon 4 Jan  | Buffer  | **M6**                                                                                                                                                                      |
+| W8D1 | Tue 5 Jan  | BE      | Security pass: Helmet, CORS, rate limits, secrets, RLS, logging, Render config                                                                                              |
+| W8D2 | Wed 6 Jan  | FE      | Splash, app icon, SVG illustrations, 3-slide onboarding + location permission + unit preferences + 'All set' (first-run gate)                                               |
+| W8D3 | Thu 7 Jan  | FE      | UI bugs, accessibility, offline/poor-network, performance, versioning                                                                                                       |
+| W8D4 | Fri 8 Jan  | QA      | Full E2E on Android + iOS (lookup → history → compare → AI)                                                                                                                 |
+| W8D5 | Mon 11 Jan | Release | Fastlane beta builds, README, known limitations; **M7**                                                                                                                     |
 
 ## 4. Decisions made (from your answers)
 
-- Hours: 2.5 h/day, 5 days/week; one buffer day (Mon) per week.
-- Backend in `apps/api` (monorepo). Extend existing `apps/mobile`.
-- Personal dev/testing only: no Play/Apple fees.
+- Hours: 2.5 h/day, 5 days/week; one buffer day (Mon) per week. Backend in `apps/api`; extend existing `apps/mobile`. Personal dev/testing only.
+- Design round: climate-only Home (no live weather/AQI), Projection tab hidden, marker map (no heatmap), device-only profile, 1991–2020 baseline, palette from mockup `1000524102`, SVG assets created by me.
+- Splash, app icon and onboarding are built in **Week 8**; features and backend come first. Deferred post-MVP: notifications/alerts, voice input, multi-language, Copernicus, AQI/live weather, projections, accounts.
 
 ## 5. Open items / dependencies on you
 
-- Share **design images** by W1D3 (Thu 19 Nov) → I will add a screen inventory table to FRONTEND_PLAN.
+- Design images received and reviewed (see 2b). Splash/icon/onboarding are produced in Week 8.
 - Create accounts: Supabase, Render, OpenAI (with spend cap), Google Maps key (W5).
 - Confirm tool choices when we reach them: SQL migrations via `node-pg-migrate`/plain SQL (default) vs Drizzle.
 
