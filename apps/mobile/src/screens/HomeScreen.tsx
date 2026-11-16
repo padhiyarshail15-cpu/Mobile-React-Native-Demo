@@ -6,12 +6,8 @@ import { Button } from '@repo/ui';
 import { env } from '~/config/env';
 
 export default function HomeScreen() {
-  const abc: string = 'null';
-  console.log(abc);
   return (
-    <SafeAreaView
-      style={styles.container}
-      edges={['top', 'right', 'bottom', 'left']}>
+    <SafeAreaView style={styles.container} edges={['top', 'right', 'left']}>
       <Text style={styles.envLabel} testID="env-label">
         {`Loaded env: ${env.appEnv}`}
       </Text>

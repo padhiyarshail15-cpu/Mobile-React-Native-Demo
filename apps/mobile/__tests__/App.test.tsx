@@ -32,12 +32,13 @@ describe('HomeScreen', () => {
 });
 
 describe('AppContainer', () => {
-  it('renders the home screen', () => {
+  it('renders the home tab inside the navigator', () => {
     render(<AppContainer />);
 
     expect(screen.getByTestId('env-label')).toBeOnTheScreen();
     expect(
       screen.getByRole('button', { name: 'Press me please' })
     ).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Explore' })).toBeOnTheScreen();
   });
 });
