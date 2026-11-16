@@ -6,6 +6,8 @@ import type {
 } from 'react-native';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 
+import { colors } from '../../theme';
+
 export type ButtonVariant = 'primary' | 'secondary' | 'outline';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
@@ -63,9 +65,9 @@ export function Button({
 }
 
 const labelColors: Record<ButtonVariant, string> = {
-  primary: '#FFFFFF',
-  secondary: '#FFFFFF',
-  outline: '#2563EB',
+  primary: colors.card,
+  secondary: colors.primary,
+  outline: colors.primary,
 };
 
 const styles = StyleSheet.create({
@@ -88,9 +90,9 @@ const styles = StyleSheet.create({
 });
 
 const variantStyles = StyleSheet.create({
-  primary: { backgroundColor: '#2563EB' },
-  secondary: { backgroundColor: '#4B5563' },
-  outline: { backgroundColor: 'transparent', borderColor: '#2563EB' },
+  primary: { backgroundColor: colors.primary },
+  secondary: { backgroundColor: colors.surface },
+  outline: { backgroundColor: 'transparent', borderColor: colors.primary },
 });
 
 const sizeStyles = StyleSheet.create({
