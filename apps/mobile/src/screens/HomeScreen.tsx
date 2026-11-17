@@ -84,8 +84,8 @@ function HomeContent({ data, onAskAi }: HomeContentProps) {
           color={colors.precipitation}
         />
         <MetricTile
-          label="Solar"
-          value={formatMetric(data.solarKwhM2Day, 1, 'kWh/m²/d')}
+          label="Solar (kWh/m²/d)"
+          value={formatMetric(data.solarKwhM2Day, 1, '')}
           color={colors.solar}
         />
       </View>

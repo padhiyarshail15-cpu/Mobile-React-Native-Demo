@@ -10,6 +10,10 @@ describe('formatMetric', () => {
     expect(formatMetric(62, 0, '%')).toBe('62%');
   });
 
+  it('omits the space when there is no unit', () => {
+    expect(formatMetric(5.6, 1, '')).toBe('5.6');
+  });
+
   it('returns Unavailable instead of zero for missing values', () => {
     expect(formatMetric(null, 1, '°C')).toBe('Unavailable');
   });

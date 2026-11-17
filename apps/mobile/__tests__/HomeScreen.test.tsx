@@ -53,7 +53,8 @@ describe('HomeScreen', () => {
 
     expect(await screen.findByText('62%')).toBeOnTheScreen();
     expect(screen.getByText('812 mm')).toBeOnTheScreen();
-    expect(screen.getByText('5.6 kWh/m²/d')).toBeOnTheScreen();
+    expect(screen.getByText('5.6')).toBeOnTheScreen();
+    expect(screen.getByText('Solar (kWh/m²/d)')).toBeOnTheScreen();
   });
 
   it('labels the source, baseline and current year', async () => {

@@ -8,7 +8,9 @@ export function formatMetric(
   if (value === null) {
     return UNAVAILABLE_LABEL;
   }
-  return `${value.toFixed(fractionDigits)}${unit === '%' ? '' : ' '}${unit}`;
+  return `${value.toFixed(fractionDigits)}${
+    unit === '' || unit === '%' ? '' : ' '
+  }${unit}`;
 }
 
 export function formatAnomaly(value: number | null): string {
