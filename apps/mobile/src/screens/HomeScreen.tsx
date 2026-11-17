@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,7 +11,6 @@ import {
   LoadingState,
   Text,
   colors,
-  spacing,
 } from '@repo/ui';
 import { ClimateCard } from '~/features/home/components/ClimateCard';
 import { MetricTile } from '~/features/home/components/MetricTile';
@@ -22,9 +21,12 @@ import type { HomeClimate } from '~/features/home/types';
 import { useHomeClimate } from '~/features/home/useHomeClimate';
 import type { MainTabParamList } from '~/navigation/types';
 
+import { useStyles } from './HomeScreen.styles';
+
 export type HomeScreenProps = BottomTabScreenProps<MainTabParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
+  const styles = useStyles();
   const { state, retry } = useHomeClimate();
 
   return (
@@ -62,6 +64,7 @@ type HomeContentProps = {
 };
 
 function HomeContent({ data, onAskAi }: HomeContentProps) {
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       {data.isSample ? <SampleBanner /> : null}
@@ -105,24 +108,3 @@ function HomeContent({ data, onAskAi }: HomeContentProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
-  },
-  section: {
-    gap: spacing.lg,
-  },
-  tiles: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  insight: {
-    gap: spacing.sm,
-  },
-});

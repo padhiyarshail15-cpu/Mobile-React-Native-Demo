@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { spacing } from '../../theme';
 import { Text } from '../Text';
+
+import { useStyles } from './Header.styles';
 
 export interface HeaderProps {
   title: string;
@@ -12,6 +13,7 @@ export interface HeaderProps {
 }
 
 export function Header({ title, subtitle, right }: HeaderProps) {
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <View style={styles.titles}>
@@ -28,16 +30,3 @@ export function Header({ title, subtitle, right }: HeaderProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-  },
-  titles: {
-    flexShrink: 1,
-    gap: spacing.xs,
-  },
-});

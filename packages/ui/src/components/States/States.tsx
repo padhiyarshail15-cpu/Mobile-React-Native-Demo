@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
 
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
-import { colors, spacing } from '../../theme';
+import { colors } from '../../theme';
 import { Button } from '../Button';
 import { Text } from '../Text';
+
+import { useStyles } from './States.styles';
 
 interface StateViewProps {
   title: string;
@@ -15,6 +17,7 @@ interface StateViewProps {
 }
 
 function StateView({ title, message, icon, action, testID }: StateViewProps) {
+  const styles = useStyles();
   return (
     <View style={styles.container} testID={testID}>
       {icon}
@@ -112,19 +115,3 @@ export function DataUnavailable({
     />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-    padding: spacing.xl,
-  },
-  center: {
-    textAlign: 'center',
-  },
-  action: {
-    marginTop: spacing.sm,
-    minWidth: 160,
-  },
-});

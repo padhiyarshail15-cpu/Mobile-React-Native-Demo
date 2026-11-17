@@ -1,8 +1,9 @@
 import type { PressableProps, StyleProp, ViewStyle } from 'react-native';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
 
-import { colors, radius, spacing } from '../../theme';
 import { Text } from '../Text';
+
+import { useStyles } from './Chip.styles';
 
 export interface ChipProps extends Omit<PressableProps, 'style' | 'children'> {
   label: string;
@@ -17,6 +18,7 @@ export function Chip({
   style,
   ...rest
 }: ChipProps) {
+  const styles = useStyles();
   return (
     <Pressable
       accessibilityRole="button"
@@ -38,33 +40,3 @@ export function Chip({
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-  },
-  selected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  unselected: {
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-  },
-  pressed: {
-    opacity: 0.8,
-  },
-  disabled: {
-    opacity: 0.45,
-  },
-  label: {
-    fontWeight: '600',
-  },
-  selectedLabel: {
-    color: colors.card,
-  },
-});

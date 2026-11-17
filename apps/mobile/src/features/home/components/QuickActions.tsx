@@ -1,6 +1,8 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { Chip, Text, spacing } from '@repo/ui';
+import { Chip, Text } from '@repo/ui';
+
+import { useStyles } from './QuickActions.styles';
 
 type QuickActionsProps = {
   onAskAi: () => void;
@@ -8,6 +10,7 @@ type QuickActionsProps = {
 
 // Only Ask AI is wired now. The rest arrive in later weeks.
 export function QuickActions({ onAskAi }: QuickActionsProps) {
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       <Text variant="heading">Quick actions</Text>
@@ -25,14 +28,3 @@ export function QuickActions({ onAskAi }: QuickActionsProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-});

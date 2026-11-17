@@ -1,6 +1,8 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { Card, Text, spacing } from '@repo/ui';
+import { Card, Text } from '@repo/ui';
+
+import { useStyles } from './MetricTile.styles';
 
 type MetricTileProps = {
   label: string;
@@ -9,6 +11,7 @@ type MetricTileProps = {
 };
 
 export function MetricTile({ label, value, color }: MetricTileProps) {
+  const styles = useStyles();
   return (
     <Card style={styles.tile}>
       <View style={[styles.dot, { backgroundColor: color }]} />
@@ -19,16 +22,3 @@ export function MetricTile({ label, value, color }: MetricTileProps) {
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  tile: {
-    flex: 1,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-});

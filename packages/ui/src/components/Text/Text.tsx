@@ -3,10 +3,12 @@ import type {
   StyleProp,
   TextStyle,
 } from 'react-native';
-import { StyleSheet, Text as RNText } from 'react-native';
+import { Text as RNText } from 'react-native';
 
-import { colors, typography } from '../../theme';
+import { typography } from '../../theme';
 import type { TypographyVariant } from '../../theme';
+
+import { useStyles } from './Text.styles';
 
 export interface TextProps extends RNTextProps {
   variant?: TypographyVariant;
@@ -20,6 +22,7 @@ export function Text({
   style,
   ...rest
 }: TextProps) {
+  const styles = useStyles();
   return (
     <RNText
       style={[styles.base, typography[variant], muted && styles.muted, style]}
@@ -27,12 +30,3 @@ export function Text({
     />
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    color: colors.text,
-  },
-  muted: {
-    color: colors.textMuted,
-  },
-});

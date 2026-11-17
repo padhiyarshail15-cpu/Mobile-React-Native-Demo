@@ -1,8 +1,11 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
-import { Text, radius, spacing } from '@repo/ui';
+import { Text } from '@repo/ui';
+
+import { useStyles } from './SampleBanner.styles';
 
 export function SampleBanner() {
+  const styles = useStyles();
   return (
     <View style={styles.banner} accessibilityRole="alert">
       <Text variant="caption" style={styles.label}>
@@ -14,19 +17,3 @@ export function SampleBanner() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  banner: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: radius.sm,
-    padding: spacing.sm,
-    gap: spacing.xs,
-  },
-  label: {
-    color: '#92400E',
-    fontWeight: '700',
-  },
-  message: {
-    color: '#92400E',
-  },
-});
