@@ -23,4 +23,14 @@ describe('Chip', () => {
 
     expect(onPress).toHaveBeenCalledTimes(1);
   });
+
+  it('does not respond when disabled', () => {
+    const onPress = jest.fn();
+    render(<Chip label="Popular" disabled onPress={onPress} />);
+
+    expect(screen.getByRole('button')).toBeDisabled();
+    fireEvent.press(screen.getByRole('button', { name: 'Popular' }));
+
+    expect(onPress).not.toHaveBeenCalled();
+  });
 });

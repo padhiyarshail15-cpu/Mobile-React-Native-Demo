@@ -10,15 +10,23 @@ export interface ChipProps extends Omit<PressableProps, 'style' | 'children'> {
   style?: StyleProp<ViewStyle>;
 }
 
-export function Chip({ label, selected = false, style, ...rest }: ChipProps) {
+export function Chip({
+  label,
+  selected = false,
+  disabled = false,
+  style,
+  ...rest
+}: ChipProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ selected }}
+      accessibilityState={{ selected, disabled }}
+      disabled={disabled}
       style={({ pressed }) => [
         styles.base,
         selected ? styles.selected : styles.unselected,
         pressed && styles.pressed,
+        disabled && styles.disabled,
         style,
       ]}
       {...rest}>
@@ -49,6 +57,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.8,
+  },
+  disabled: {
+    opacity: 0.45,
   },
   label: {
     fontWeight: '600',
