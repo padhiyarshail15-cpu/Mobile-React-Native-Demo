@@ -6,7 +6,7 @@ Budget: 2.5 h per working day. Dates: Tue 17 Nov 2026 → Mon 11 Jan 2027.
 ## 1. Architecture
 
 ```
-RN app ──Axios──▶ Render Free (Express + TS) ──▶ Supabase Postgres (pooler)
+RN app ──React Query + Axios──▶ Render Free (Express + TS) ──▶ Supabase Postgres (pooler)
                           │                         ▲
                           ├──▶ NASA POWER (ingestion/refresh only, not per request)
                           └──▶ OpenAI (assistant only, after DB retrieval)

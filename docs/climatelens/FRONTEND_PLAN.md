@@ -14,8 +14,9 @@ Budget: 2.5 h per working day. Dates: Tue 17 Nov 2026 → Mon 11 Jan 2027.
 | Concern       | Choice                                                                                                              | Note                                                                                       |
 | ------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Navigation    | `@react-navigation/native`, `bottom-tabs`, `native-stack`, `react-native-screens`, `react-native-safe-area-context` |                                                                                            |
-| HTTP          | `axios`                                                                                                             | 60 s timeout (Render cold start), retry on network/5xx once                                |
-| State         | `zustand`                                                                                                           | stores: location, comparison, assistant                                                    |
+| HTTP          | `axios` (transport only)                                                                                            | baseURL from Config, 60 s timeout (Render cold start), error mapper; **no retry here**     |
+| Server state  | `@tanstack/react-query` v5 (**all API calls go through it**)                                                        | cache, dedupe, loading/error, retry; installed in `apps/mobile` only (see 2a)              |
+| Client state  | `zustand`                                                                                                           | stores: location, comparison, assistant. Never holds server responses                      |
 | Validation    | Zod schemas from `packages/shared`                                                                                  | parse API responses at the boundary                                                        |
 | Local storage | `@react-native-async-storage/async-storage` + Zustand `persist`                                                     | settings, saved/recent locations, chat history, completed actions                          |
 | Geolocation   | `@react-native-community/geolocation` (permissions via Info.plist / AndroidManifest)                                | W2D4; deny = graceful                                                                      |
@@ -25,6 +26,19 @@ Budget: 2.5 h per working day. Dates: Tue 17 Nov 2026 → Mon 11 Jan 2027.
 | Config        | existing `react-native-config` → `API_BASE_URL`                                                                     | Android emulator = `http://10.0.2.2:4000/api/v1`; iOS sim = `http://localhost:4000/api/v1` |
 | Tests         | Jest + React Native Testing Library                                                                                 | each feature ships with tests                                                              |
 
+### 2a. API access rules (React Query)
+
+Every call from the app to the API goes through React Query. Screens call hooks and never import Axios.
+
+- **Roles:** Axios `httpClient` = transport (baseURL, timeout, error mapper incl. "server waking up"). React Query = server state (cache, dedupe, loading/error, retry, refetch). Zustand = client state (selected location, recents, settings, comparison, chat). Zod (`packages/shared`) parses each response inside the `queryFn`, so a bad payload becomes a query error.
+- **Where it lives:** install `@tanstack/react-query` in `apps/mobile` **only**. The monorepo has separate React copies per workspace (`.yarnrc.yml`), so hooks must not live in `packages/ui` or `packages/shared`.
+- **Retry in one place:** React Query `retry: 1` for network/5xx, none for 4xx. Do not also retry in Axios.
+- **Query keys** come from one factory (`src/api/queryKeys.ts`): `['locations','search',{q,type,region}]`, `['locations','popular']`, `['locations','nearest',{lat,lon}]`, `['locations','detail',id]`, `['climate','summary',locationId]`, `['climate','indicators',locationId]`, `['climate','timeseries',{locationId,variable,from,to,granularity}]`.
+- **Defaults:** `staleTime` 5 min for locations, 24 h for climate (long-term means, not live weather); `gcTime` 30 min; no refetch on window focus. No persisted query cache in the MVP (Zustand `persist` covers recents and selection); revisit in Week 8.
+- **Mutations:** only `POST /climate/compare` and `POST /assistant/ask` use `useMutation` (compare may be a `useQuery` since it is idempotent; decide in Week 5). Assistant answers are not cached.
+- **Hooks:** per feature in `features/<x>/queries.ts` (`useLocationSearchQuery`, `usePopularLocationsQuery`, `useNearestLocationQuery`, `useClimateSummaryQuery`, `useTimeseriesQuery`, ...).
+- **Tests:** a `renderWithProviders` helper creates a fresh `QueryClient` per test (`retry: false`, `gcTime: 0`) and the service functions are mocked. Keep using `findByText` for async UI.
+
 ## 3. Folder structure
 
 ```
@@ -33,7 +47,8 @@ apps/mobile/src/
   navigation/     RootNavigator, TabNavigator, types
   features/
     dashboard/ locations/ climate-history/ comparison/ climate-map/ climate-ai/ academy/ actions/
-      (screens/, components/, hooks/, store/, api/)
+      (screens/, components/, queries.ts (React Query hooks), service.ts (Axios calls + Zod parse), store/)
+  api/            queryClient.ts, queryKeys.ts, renderWithProviders (test helper)
   components/     app-specific shared pieces (SourceBadge, DataTypeTag, ResolutionNote, StateViews)
   services/       httpClient.ts, errorMapper.ts
   theme/          colors, typography, spacing (tokens from design images)
@@ -98,32 +113,32 @@ Shared `SourceBadge`/`DataTypeTag`/`ResolutionNote` components must show: source
 
 ### Week 2 — Locations
 
-- **W2D3 Thu 26 Nov** — `httpClient` (baseURL from Config, timeout, retry, error mapper incl. "server waking up"), persisted Zustand stores (settings, locations/recents), Explore screen: debounced search, type-filter sheet, Popular, Recents, no-results/error states.
-- **W2D4 Fri 27 Nov** — Select Location flow + selected-location header (name, level, resolution note), "Use my location" (permission → `/locations/nearest`, "not supported" message), persist selection, tests (valid, empty, ambiguous, network failure, permission denied).
+- **W2D3 Thu 26 Nov** — Install `@tanstack/react-query` (mobile only); `queryClient` + `QueryClientProvider` in `AppContainer`, `queryKeys`, `renderWithProviders`. `httpClient` (baseURL from Config, timeout, error mapper incl. "server waking up"; retry owned by React Query), persisted Zustand stores (settings, locations/recents), Explore screen via `useQuery`: debounced search (`enabled` when `q.length >= 2`, `placeholderData: keepPreviousData`), type-filter sheet, Popular, Recents, no-results/error states. Refactor `useHomeClimate` to `useQuery` (still sample data until W3D4) and keep Home states/tests green.
+- **W2D4 Fri 27 Nov** — Select Location flow + selected-location header (name, level, resolution note), "Use my location" (`useNearestLocationQuery`, enabled only after permission + coords → `/locations/nearest`, "not supported" message), location detail query, persist selection in Zustand, tests (valid, empty, ambiguous, network failure, permission denied).
 - **W2D5 Mon 30 Nov** — (buffer) test against deployed Render API on both platforms.
 
 ### Week 3 — First real dataset
 
-- **W3D4 Fri 4 Dec** — Replace mock with `/climate/indicators` + `/summary` on Home and Location Details (Overview · History · Metrics tabs): metric cards (annual mean temp, anomaly vs 1991–2020, annual rainfall, humidity, wind, solar), server-provided insight text, SourceBadge panel, loading/error/unavailable states; remove SAMPLE DATA.
+- **W3D4 Fri 4 Dec** — Replace mock with `useClimateSummaryQuery` / `useClimateIndicatorsQuery` (`/climate/summary` + `/indicators`) on Home and Location Details (Overview · History · Metrics tabs): metric cards (annual mean temp, anomaly vs 1991–2020, annual rainfall, humidity, wind, solar), server-provided insight text, SourceBadge panel, loading/error/unavailable states; remove SAMPLE DATA.
 - **W3D5 Mon 7 Dec** — (buffer) compare on-screen numbers with provider values; fix units/rounding.
 
 ### Week 4 — History
 
-- **W4D2 Wed 9 Dec** — Chart library spike on RN 0.88 (both platforms); History screen skeleton + hook.
+- **W4D2 Wed 9 Dec** — Chart library spike on RN 0.88 (both platforms); History screen skeleton + `useTimeseriesQuery` (keyed by variable/range/granularity; `keepPreviousData` so period chips don't flash a loader).
 - **W4D3 Thu 10 Dec** — Charts for temperature, rainfall, humidity, solar; Monthly/Yearly toggle; period chips (1Y, 5Y, 10Y, All, Custom); axis units; baseline line; key takeaway card.
 - **W4D4 Fri 11 Dec** — Metric Details screen (expandable cards, min/max/range, Data Source section with NASA POWER link, last updated), "Data not available" state, gaps for missing years, tests (ranges, units, mapping).
 - **W4D5 Mon 14 Dec** — (buffer) polish; M3 check.
 
 ### Week 5 — Comparison & map
 
-- **W5D2 Wed 16 Dec** — Compare screen: pick 2 locations, cards + overlay chart, show incompatibility reasons from API (never force a comparison).
+- **W5D2 Wed 16 Dec** — Compare screen: pick 2 locations, cards + overlay chart, show incompatibility reasons from API (never force a comparison). Compare uses `useMutation` (or `useQuery`; decide here).
 - **W5D3 Thu 17 Dec** — Map: install, iOS pods, Android API key, colour-coded annual-mean-temperature markers + legend (no heatmap).
 - **W5D4 Fri 18 Dec** — Marker → location detail, resolution disclosure, tests; fallback list if map blocked.
 - **W5D5 Mon 21 Dec** — (buffer) M4 check.
 
 ### Week 6 — Ask Climate AI
 
-- **W6D3 Thu 24 Dec** — Chat UI (message list, input, typing/loading, error + retry), `assistantStore`.
+- **W6D3 Thu 24 Dec** — Chat UI (message list, input, typing/loading, error + retry), `assistantStore` (chat history only); each question is a `useMutation` and answers are not cached.
 - **W6D4 Fri 25 Dec** — Citation chips (tap → source sheet), limitations block, "insufficient evidence" rendering, suggested questions, tests.
 - **W6D5 Mon 28 Dec** — (buffer) run the eval questions in-app; fix rendering issues.
 
@@ -153,3 +168,5 @@ Works on Android and iOS · loading/error/empty/unavailable handled · source in
 | RN 0.88 library incompatibility (charts/maps) | Spike first; fallback options listed above                       |
 | Render cold start looks like a bug            | Explicit "waking server" state; keep-warm ping                   |
 | iOS signing / Pods issues                     | Done W1D1; simulator-only for MVP                                |
+| React Query hooks break across workspaces     | Install and use only in `apps/mobile` (duplicate-React rule)     |
+| Double retries (Axios + React Query)          | Retry only in React Query                                        |
