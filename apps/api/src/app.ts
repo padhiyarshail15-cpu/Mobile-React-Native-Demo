@@ -5,16 +5,19 @@ import pinoHttp from 'pino-http';
 
 import type { Logger } from './config/logger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
-import { apiRouter } from './routes';
+import type { LocationsService } from './modules/locations/locations.service';
+import { createApiRouter } from './routes';
 
 export interface AppOptions {
   corsOrigins: string[];
   logger: Logger;
+  locations: LocationsService;
 }
 
 export function createApp({
   corsOrigins,
   logger,
+  locations,
 }: AppOptions): express.Express {
   const app = express();
 
@@ -31,7 +34,7 @@ export function createApp({
   );
   app.use(express.json({ limit: '100kb' }));
 
-  app.use('/api/v1', apiRouter);
+  app.use('/api/v1', createApiRouter({ locations }));
 
   app.use(notFoundHandler);
   app.use(errorHandler);

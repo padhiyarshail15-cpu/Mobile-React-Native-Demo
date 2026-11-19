@@ -2,11 +2,19 @@ import request from 'supertest';
 
 import { createApp } from './app';
 import { createLogger } from './config/logger';
+import type { LocationsService } from './modules/locations/locations.service';
 
 const logger = createLogger('silent');
 
+const unusedLocations: LocationsService = {
+  search: jest.fn(),
+  popular: jest.fn(),
+  nearest: jest.fn(),
+  getById: jest.fn(),
+};
+
 function buildApp(corsOrigins: string[] = []) {
-  return createApp({ corsOrigins, logger });
+  return createApp({ corsOrigins, logger, locations: unusedLocations });
 }
 
 describe('GET /api/v1/health', () => {

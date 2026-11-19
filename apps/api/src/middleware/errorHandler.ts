@@ -1,5 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 
+import { AppError } from './AppError';
+
 interface HttpLikeError {
   status?: unknown;
   expose?: unknown;
@@ -30,6 +32,17 @@ export function errorHandler(
 ): void {
   if (res.headersSent) {
     next(err);
+    return;
+  }
+
+  if (err instanceof AppError) {
+    res.status(err.status).json({
+      error: {
+        code: err.code,
+        message: err.message,
+        ...(err.details ? { details: err.details } : {}),
+      },
+    });
     return;
   }
 

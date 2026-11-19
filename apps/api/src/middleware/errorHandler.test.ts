@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
+import { AppError } from './AppError';
 import { errorHandler } from './errorHandler';
 
 function mockResponse(headersSent = false) {
@@ -30,6 +31,24 @@ describe('errorHandler', () => {
       error: { code: 'INTERNAL_ERROR', message: 'Something went wrong' },
     });
     expect(req.log.error).toHaveBeenCalled();
+  });
+
+  it('returns the code, message and details of an AppError without logging it', () => {
+    const res = mockResponse();
+    const details = [{ field: 'q', message: 'too short' }];
+
+    errorHandler(
+      new AppError(400, 'VALIDATION_ERROR', 'Invalid request', details),
+      req,
+      res as unknown as Response,
+      jest.fn() as NextFunction
+    );
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: { code: 'VALIDATION_ERROR', message: 'Invalid request', details },
+    });
+    expect(req.log.error).not.toHaveBeenCalled();
   });
 
   it('delegates to next when headers were already sent', () => {
