@@ -17,7 +17,7 @@ RN app ──React Query + Axios──▶ Render Free (Express + TS) ──▶ S
 
 ## 2. Stack & conventions
 
-Node 22 LTS target (dev machine has v26 — pin `engines`/`.nvmrc`), Express, TypeScript, Zod (shared schemas in `packages/shared`), `pg` + plain SQL migrations (default; Drizzle optional), `pino` logging, `helmet`, `cors`, `express-rate-limit`, Jest + Supertest, `openai` SDK.
+Node 22 LTS target (dev machine has v26 — pin `engines`/`.nvmrc`), Express, TypeScript, Zod (backend validation only; response types live in `packages/shared`, types only), `pg` + plain SQL migrations (default; Drizzle optional), `pino` logging, `helmet`, `cors`, `express-rate-limit`, Jest + Supertest, `openai` SDK.
 Structure:
 
 ```

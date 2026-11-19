@@ -17,7 +17,7 @@ Budget: 2.5 h per working day. Dates: Tue 17 Nov 2026 → Mon 11 Jan 2027.
 | HTTP          | `axios` (transport only)                                                                                            | baseURL from Config, 60 s timeout (Render cold start), error mapper; **no retry here**     |
 | Server state  | `@tanstack/react-query` v5 (**all API calls go through it**)                                                        | cache, dedupe, loading/error, retry; installed in `apps/mobile` only (see 2a)              |
 | Client state  | `zustand`                                                                                                           | stores: location, comparison, assistant. Never holds server responses                      |
-| Validation    | Zod schemas from `packages/shared`                                                                                  | parse API responses at the boundary                                                        |
+| Validation    | **None in the app.** Zod is backend-only; types come from `packages/shared` (types only)                            | Axios `errorMapper` guards non-2xx, non-JSON and missing `data` envelope                   |
 | Local storage | `@react-native-async-storage/async-storage` + Zustand `persist`                                                     | settings, saved/recent locations, chat history, completed actions                          |
 | Geolocation   | `@react-native-community/geolocation` (permissions via Info.plist / AndroidManifest)                                | W2D4; deny = graceful                                                                      |
 | Icons         | `lucide-react-native` + `react-native-svg`                                                                          | outline/filled per design                                                                  |
@@ -30,7 +30,7 @@ Budget: 2.5 h per working day. Dates: Tue 17 Nov 2026 → Mon 11 Jan 2027.
 
 Every call from the app to the API goes through React Query. Screens call hooks and never import Axios.
 
-- **Roles:** Axios `httpClient` = transport (baseURL, timeout, error mapper incl. "server waking up"). React Query = server state (cache, dedupe, loading/error, retry, refetch). Zustand = client state (selected location, recents, settings, comparison, chat). Zod (`packages/shared`) parses each response inside the `queryFn`, so a bad payload becomes a query error.
+- **Roles:** Axios `httpClient` = transport (baseURL, timeout, error mapper incl. "server waking up"). React Query = server state (cache, dedupe, loading/error, retry, refetch). Zustand = client state (selected location, recents, settings, comparison, chat). Zod is **backend-only**: the app has no `zod` dependency and does no runtime response parsing. The `errorMapper` turns non-2xx, non-JSON (e.g. a Render proxy HTML page) and missing-envelope responses into a typed `ApiError`, which React Query surfaces as the query error. Revisit Zod parsing in the app only if contract drift causes real bugs (climate summary first).
 - **Where it lives:** install `@tanstack/react-query` in `apps/mobile` **only**. The monorepo has separate React copies per workspace (`.yarnrc.yml`), so hooks must not live in `packages/ui` or `packages/shared`.
 - **Retry in one place:** React Query `retry: 1` for network/5xx, none for 4xx. Do not also retry in Axios.
 - **Query keys** come from one factory (`src/api/queryKeys.ts`): `['locations','search',{q,type,region}]`, `['locations','popular']`, `['locations','nearest',{lat,lon}]`, `['locations','detail',id]`, `['climate','summary',locationId]`, `['climate','indicators',locationId]`, `['climate','timeseries',{locationId,variable,from,to,granularity}]`.
@@ -47,14 +47,14 @@ apps/mobile/src/
   navigation/     RootNavigator, TabNavigator, types
   features/
     dashboard/ locations/ climate-history/ comparison/ climate-map/ climate-ai/ academy/ actions/
-      (screens/, components/, queries.ts (React Query hooks), service.ts (Axios calls + Zod parse), store/)
+      (screens/, components/, queries.ts (React Query hooks), service.ts (Axios calls + envelope check), store/)
   api/            queryClient.ts, queryKeys.ts, renderWithProviders (test helper)
   components/     app-specific shared pieces (SourceBadge, DataTypeTag, ResolutionNote, StateViews)
   services/       httpClient.ts, errorMapper.ts
   theme/          colors, typography, spacing (tokens from design images)
   types/
 packages/ui       Button, Card, Header, Text, Chip, EmptyState/ErrorState/LoadingState
-packages/shared   Zod schemas + types for API payloads
+packages/shared   TypeScript types for API payloads (types only: no Zod, no React, no runtime deps)
 ```
 
 (Smart Waste is **out of scope**; leave no code for it.)

@@ -22,3 +22,4 @@ Rule for this project: never copy an API response into Zustand.
 - `enabled` (do not search for fewer than 2 characters).
 - `keepPreviousData` (no flicker while typing).
 - Why Axios no longer retries.
+- Why the app does not use Zod: the backend is the trust boundary; the app guards errors and envelopes instead.

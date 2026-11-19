@@ -13,7 +13,7 @@ Approach: extend the **existing Yarn/Turbo monorepo** instead of creating a new 
 apps/mobile      existing RN 0.88 app (keeps Fastlane/Jenkins/Firebase CI)   -> frontend
 apps/api         NEW Node + Express + TS                                       -> backend
 packages/ui      existing shared components (Button) -> extend with Card, Header, state views
-packages/shared  NEW Zod schemas + TS types shared by mobile and api (API contract)
+packages/shared  NEW TS types for the API contract (types only; Zod is backend-only)
 docs/climatelens plans, API contract, data-source notes
 ```
 
