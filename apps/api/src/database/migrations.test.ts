@@ -58,6 +58,7 @@ describe('readMigrationFiles', () => {
     expect(files.map(file => file.name)).toEqual([
       '001_create_locations.sql',
       '002_create_datasets.sql',
+      '003_add_coordinate_source_to_locations.sql',
     ]);
   });
 });
