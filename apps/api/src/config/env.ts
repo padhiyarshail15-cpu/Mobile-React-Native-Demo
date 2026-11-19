@@ -8,6 +8,12 @@ const envSchema = z.object({
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),
+  DATABASE_URL: z
+    .string()
+    .min(1, 'is required (Supabase session pooler URL)')
+    .refine(value => /^postgres(ql)?:\/\//.test(value), {
+      message: 'must start with postgres:// or postgresql://',
+    }),
   CORS_ORIGINS: z
     .string()
     .default('')
