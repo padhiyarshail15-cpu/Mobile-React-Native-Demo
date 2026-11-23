@@ -3,6 +3,11 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 
 import { ApiError } from '../src/api/errorMapper';
 import {
+  GeolocationError,
+  getCurrentCoordinates,
+} from '../src/features/locations/geolocationService';
+import {
+  getNearestLocation,
   getPopularLocations,
   searchLocations,
 } from '../src/features/locations/locationsService';
@@ -23,6 +28,13 @@ jest.mock(
 jest.mock('../src/features/locations/locationsService', () => ({
   searchLocations: jest.fn(),
   getPopularLocations: jest.fn(),
+  getNearestLocation: jest.fn(),
+}));
+
+// Keep the real GeolocationError class; only the native read is faked.
+jest.mock('../src/features/locations/geolocationService', () => ({
+  ...jest.requireActual('../src/features/locations/geolocationService'),
+  getCurrentCoordinates: jest.fn(),
 }));
 
 const mockedSearch = searchLocations as jest.MockedFunction<
@@ -30,6 +42,12 @@ const mockedSearch = searchLocations as jest.MockedFunction<
 >;
 const mockedPopular = getPopularLocations as jest.MockedFunction<
   typeof getPopularLocations
+>;
+const mockedNearest = getNearestLocation as jest.MockedFunction<
+  typeof getNearestLocation
+>;
+const mockedCoordinates = getCurrentCoordinates as jest.MockedFunction<
+  typeof getCurrentCoordinates
 >;
 
 const place = (overrides: Partial<Location>): Location => ({
@@ -338,5 +356,134 @@ describe('ExploreScreen', () => {
 
     expect(screen.queryByText('Recent')).toBeNull();
     expect(useRecentsStore.getState().recents).toEqual([]);
+  });
+
+  describe('Use my location', () => {
+    const pressUseMyLocation = () =>
+      fireEvent.press(screen.getByRole('button', { name: 'Use my location' }));
+
+    it('selects the nearest place and returns to Home', async () => {
+      mockedCoordinates.mockResolvedValue({ lat: 23.1, lon: 72.6 });
+      mockedNearest.mockResolvedValue(ahmedabad);
+      renderWithProviders(<ExploreScreen />);
+      await screen.findByText('Mumbai');
+
+      pressUseMyLocation();
+
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith('Home'));
+      expect(mockedNearest).toHaveBeenCalledWith(
+        { lat: 23.1, lon: 72.6 },
+        expect.anything()
+      );
+      expect(useSelectedLocationStore.getState().selected?.name).toBe(
+        'Ahmedabad'
+      );
+      expect(useRecentsStore.getState().recents.map(l => l.name)).toEqual([
+        'Ahmedabad',
+      ]);
+    });
+
+    it('shows progress while it looks for you, and ignores a second tap', async () => {
+      mockedCoordinates.mockReturnValue(new Promise(() => {}));
+      renderWithProviders(<ExploreScreen />);
+      await screen.findByText('Mumbai');
+
+      pressUseMyLocation();
+
+      expect(
+        await screen.findByText('Finding your location…')
+      ).toBeOnTheScreen();
+      fireEvent.press(screen.getByRole('button', { name: /Use my location/ }));
+      expect(mockedCoordinates).toHaveBeenCalledTimes(1);
+    });
+
+    it('explains a refused permission and never calls the API', async () => {
+      mockedCoordinates.mockRejectedValue(new GeolocationError('denied'));
+      renderWithProviders(<ExploreScreen />);
+      await screen.findByText('Mumbai');
+
+      pressUseMyLocation();
+
+      expect(
+        await screen.findByText(
+          'Location access is off. Turn it on in Settings, or search for a place instead.'
+        )
+      ).toBeOnTheScreen();
+      expect(mockedNearest).not.toHaveBeenCalled();
+      expect(navigate).not.toHaveBeenCalled();
+      // The rest of the screen keeps working.
+      expect(screen.getByText('Mumbai')).toBeOnTheScreen();
+    });
+
+    it.each([['unavailable'], ['timeout']] as const)(
+      'explains when the position cannot be read (%s)',
+      async reason => {
+        mockedCoordinates.mockRejectedValue(new GeolocationError(reason));
+        renderWithProviders(<ExploreScreen />);
+        await screen.findByText('Mumbai');
+
+        pressUseMyLocation();
+
+        expect(
+          await screen.findByText(
+            "Couldn't get your location. Try again, or search for a place instead."
+          )
+        ).toBeOnTheScreen();
+      }
+    );
+
+    it('says so when no supported place is within range', async () => {
+      mockedCoordinates.mockResolvedValue({ lat: 0, lon: -30 });
+      mockedNearest.mockRejectedValue(
+        new ApiError(
+          'not_found',
+          'No supported location within 150 km',
+          404,
+          'NO_SUPPORTED_LOCATION'
+        )
+      );
+      renderWithProviders(<ExploreScreen />);
+      await screen.findByText('Mumbai');
+
+      pressUseMyLocation();
+
+      expect(
+        await screen.findByText(
+          'No supported location within 150 km. Try searching for a place instead.'
+        )
+      ).toBeOnTheScreen();
+      expect(useSelectedLocationStore.getState().selected).toBeNull();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('shows the reason when the API or network fails', async () => {
+      mockedCoordinates.mockResolvedValue({ lat: 23.1, lon: 72.6 });
+      mockedNearest.mockRejectedValue(
+        new ApiError('network', "Can't reach the server.")
+      );
+      renderWithProviders(<ExploreScreen />);
+      await screen.findByText('Mumbai');
+
+      pressUseMyLocation();
+
+      expect(
+        await screen.findByText("Can't reach the server.")
+      ).toBeOnTheScreen();
+    });
+
+    it('works on a second try after permission is granted in Settings', async () => {
+      mockedCoordinates.mockRejectedValueOnce(new GeolocationError('denied'));
+      mockedCoordinates.mockResolvedValue({ lat: 23.1, lon: 72.6 });
+      mockedNearest.mockResolvedValue(ahmedabad);
+      renderWithProviders(<ExploreScreen />);
+      await screen.findByText('Mumbai');
+      pressUseMyLocation();
+      await screen.findByText(/Location access is off/);
+
+      pressUseMyLocation();
+
+      await waitFor(() => expect(navigate).toHaveBeenCalledWith('Home'));
+      expect(screen.queryByText(/Location access is off/)).toBeNull();
+    });
   });
 });

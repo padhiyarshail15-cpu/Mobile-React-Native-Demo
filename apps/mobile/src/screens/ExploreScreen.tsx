@@ -16,6 +16,7 @@ import {
 import { LocationRow } from '~/features/locations/components/LocationRow';
 import { SearchInput } from '~/features/locations/components/SearchInput';
 import { TypeFilterSheet } from '~/features/locations/components/TypeFilterSheet';
+import { UseMyLocation } from '~/features/locations/components/UseMyLocation';
 import {
   MIN_QUERY_LENGTH,
   isSearchActive,
@@ -84,6 +85,7 @@ export default function ExploreScreen({ navigation }: ExploreScreenProps) {
         onPress={() => setSheetOpen(true)}
         accessibilityHint="Opens the type filter"
       />
+      <UseMyLocation onFound={chooseLocation} />
       {showShortHint ? (
         <Text variant="caption" style={styles.hint}>
           Type at least {MIN_QUERY_LENGTH} characters to search.

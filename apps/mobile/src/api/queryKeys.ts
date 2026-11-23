@@ -1,4 +1,4 @@
-import type { LocationLevel } from '~/features/locations/types';
+import type { Coordinates, LocationLevel } from '~/features/locations/types';
 
 export interface LocationSearchFilters {
   q?: string;
@@ -13,6 +13,7 @@ export const queryKeys = {
     search: (filters: LocationSearchFilters) =>
       ['locations', 'search', filters] as const,
     popular: () => ['locations', 'popular'] as const,
+    nearest: (coords: Coordinates) => ['locations', 'nearest', coords] as const,
   },
   climate: {
     home: () => ['climate', 'home'] as const,

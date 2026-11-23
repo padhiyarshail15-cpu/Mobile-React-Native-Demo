@@ -1,8 +1,17 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  queryOptions,
+  useQuery,
+} from '@tanstack/react-query';
 
 import { queryKeys, type LocationSearchFilters } from '~/api/queryKeys';
 
-import { getPopularLocations, searchLocations } from './locationsService';
+import {
+  getNearestLocation,
+  getPopularLocations,
+  searchLocations,
+} from './locationsService';
+import type { Coordinates } from './types';
 
 // The API rejects a query shorter than 2 characters.
 export const MIN_QUERY_LENGTH = 2;
@@ -26,5 +35,15 @@ export function usePopularLocationsQuery() {
   return useQuery({
     queryKey: queryKeys.locations.popular(),
     queryFn: ({ signal }) => getPopularLocations(signal),
+  });
+}
+
+// Used with queryClient.fetchQuery from a button press: a one-shot lookup that still
+// gets the cache, the abort signal and the shared retry rule. Coordinates are in the
+// key, so the same ~1 km area is served from cache.
+export function nearestLocationQuery(coords: Coordinates) {
+  return queryOptions({
+    queryKey: queryKeys.locations.nearest(coords),
+    queryFn: ({ signal }) => getNearestLocation(coords, signal),
   });
 }
