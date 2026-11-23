@@ -2615,6 +2615,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-native-community/geolocation@npm:^3.4.0":
+  version: 3.4.0
+  resolution: "@react-native-community/geolocation@npm:3.4.0"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: 10c0/3899ef9e88bcb139f724a140149311502f2d1e1d060d928886cfbe653d8245e76f39ac9a869ae3993d71840dfb0bd063102decc19510396a9a6aec0e1ba5fc57
+  languageName: node
+  linkType: hard
+
 "@react-native/asset-utils@npm:0.88.1":
   version: 0.88.1
   resolution: "@react-native/asset-utils@npm:0.88.1"
@@ -8853,6 +8863,7 @@ __metadata:
     "@react-native-community/cli": "npm:20.2.0"
     "@react-native-community/cli-platform-android": "npm:20.2.0"
     "@react-native-community/cli-platform-ios": "npm:20.2.0"
+    "@react-native-community/geolocation": "npm:^3.4.0"
     "@react-native/babel-preset": "npm:0.88.1"
     "@react-native/jest-preset": "npm:0.88.1"
     "@react-native/metro-config": "npm:0.88.1"
