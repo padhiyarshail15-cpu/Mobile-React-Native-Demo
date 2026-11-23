@@ -39,6 +39,8 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
+      // While loading the title is replaced by a spinner, so keep the name for screen readers.
+      accessibilityLabel={title}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
       style={({ pressed }) => [

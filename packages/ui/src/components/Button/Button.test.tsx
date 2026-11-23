@@ -27,6 +27,12 @@ describe('Button', () => {
     expect(onPress).not.toHaveBeenCalled();
   });
 
+  it('keeps its name for screen readers while loading', () => {
+    render(<Button title="Save" loading />);
+
+    expect(screen.getByRole('button', { name: 'Save' })).toBeOnTheScreen();
+  });
+
   it('is disabled and busy while loading', () => {
     const onPress = jest.fn();
     render(<Button title="Save" loading onPress={onPress} />);
