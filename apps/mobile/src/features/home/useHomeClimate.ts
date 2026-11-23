@@ -25,5 +25,10 @@ export function useHomeClimate() {
     state = { status: 'ready', data: query.data };
   }
 
-  return { state, retry: () => void query.refetch() };
+  return {
+    state,
+    retry: () => {
+      query.refetch();
+    },
+  };
 }

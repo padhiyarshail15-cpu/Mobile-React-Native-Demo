@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
+import ExploreScreen from '~/screens/ExploreScreen';
 import HomeScreen from '~/screens/HomeScreen';
 import PlaceholderScreen from '~/screens/PlaceholderScreen';
 
@@ -15,9 +16,11 @@ export default function MainTabs() {
         options={{ title: 'Home' }}
         component={HomeScreen}
       />
-      <Tab.Screen name="Explore" options={{ title: 'Explore' }}>
-        {() => <PlaceholderScreen title="Explore" />}
-      </Tab.Screen>
+      <Tab.Screen
+        name="Explore"
+        options={{ title: 'Explore' }}
+        component={ExploreScreen}
+      />
       <Tab.Screen name="AskAi" options={{ title: 'Ask AI' }}>
         {() => <PlaceholderScreen title="Ask AI" />}
       </Tab.Screen>
