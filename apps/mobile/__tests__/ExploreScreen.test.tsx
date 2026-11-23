@@ -7,9 +7,11 @@ import {
   searchLocations,
 } from '../src/features/locations/locationsService';
 import { useRecentsStore } from '../src/features/locations/recentsStore';
+import { useSelectedLocationStore } from '../src/features/locations/selectedLocationStore';
 import type { Location } from '../src/features/locations/types';
-import ExploreScreen, {
+import ExploreScreenBase, {
   SEARCH_DEBOUNCE_MS,
+  type ExploreScreenProps,
 } from '../src/screens/ExploreScreen';
 import { renderWithProviders } from '../src/test-utils/renderWithProviders';
 
@@ -57,6 +59,18 @@ const gujarat = place({
 
 const searchBox = () => screen.getByLabelText('Search locations');
 
+const navigate = jest.fn();
+
+// The screen needs navigation props; only navigate() is used.
+function ExploreScreen() {
+  return (
+    <ExploreScreenBase
+      navigation={{ navigate } as unknown as ExploreScreenProps['navigation']}
+      route={{} as never}
+    />
+  );
+}
+
 // Fake timers make the 300 ms debounce instant and keep state updates inside act().
 function typeSearch(text: string) {
   fireEvent.changeText(searchBox(), text);
@@ -70,6 +84,7 @@ describe('ExploreScreen', () => {
     jest.useFakeTimers();
     await AsyncStorage.clear();
     useRecentsStore.setState({ recents: [] });
+    useSelectedLocationStore.setState({ selected: null });
     mockedPopular.mockResolvedValue([ahmedabad, mumbai]);
     mockedSearch.mockResolvedValue([]);
   });
@@ -262,19 +277,63 @@ describe('ExploreScreen', () => {
     expect(screen.getByText('State · IN')).toBeOnTheScreen();
   });
 
-  it('remembers opened places under Recent, and clears them', async () => {
+  it('selects a tapped place, remembers it, and returns to Home', async () => {
     renderWithProviders(<ExploreScreen />);
+
     fireEvent.press(
       await screen.findByRole('button', {
         name: 'Mumbai, City · Maharashtra · IN',
       })
     );
 
-    expect(await screen.findByText('Recent')).toBeOnTheScreen();
+    expect(useSelectedLocationStore.getState().selected?.name).toBe('Mumbai');
     expect(useRecentsStore.getState().recents.map(l => l.name)).toEqual([
       'Mumbai',
     ]);
+    expect(navigate).toHaveBeenCalledWith('Home');
+  });
 
+  it('selects a place from search results too', async () => {
+    mockedSearch.mockResolvedValue([gujarat]);
+    renderWithProviders(<ExploreScreen />);
+    await screen.findByText('Mumbai');
+    typeSearch('guj');
+
+    fireEvent.press(
+      await screen.findByRole('button', { name: 'Gujarat, State · IN' })
+    );
+
+    expect(useSelectedLocationStore.getState().selected?.id).toBe(19);
+    expect(navigate).toHaveBeenCalledWith('Home');
+  });
+
+  it('selects a place again from the Recent list, moving it to the front', async () => {
+    useRecentsStore.setState({ recents: [mumbai, ahmedabad] });
+    renderWithProviders(<ExploreScreen />);
+    expect(await screen.findByText('Recent')).toBeOnTheScreen();
+
+    // The Recent row comes first; the same place also appears under Popular.
+    fireEvent.press(
+      screen.getAllByRole('button', {
+        name: 'Ahmedabad, City · Gujarat · IN',
+      })[0]
+    );
+
+    expect(useSelectedLocationStore.getState().selected?.name).toBe(
+      'Ahmedabad'
+    );
+    expect(useRecentsStore.getState().recents.map(l => l.name)).toEqual([
+      'Ahmedabad',
+      'Mumbai',
+    ]);
+    expect(navigate).toHaveBeenCalledWith('Home');
+  });
+
+  it('shows and clears the Recent list', async () => {
+    useRecentsStore.setState({ recents: [mumbai] });
+    renderWithProviders(<ExploreScreen />);
+
+    expect(await screen.findByText('Recent')).toBeOnTheScreen();
     fireEvent.press(screen.getByRole('button', { name: 'Clear' }));
 
     expect(screen.queryByText('Recent')).toBeNull();

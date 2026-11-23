@@ -2,22 +2,10 @@ import { Pressable } from 'react-native';
 
 import { Card, Text } from '@repo/ui';
 
-import { LOCATION_LEVEL_LABELS, type Location } from '../types';
+import { describeLocation } from '../format';
+import type { Location } from '../types';
 
 import { useStyles } from './LocationRow.styles';
-
-// "City · Gujarat · IN"; the state is skipped when it is the place's own name.
-export function describeLocation(location: Location): string {
-  return [
-    LOCATION_LEVEL_LABELS[location.level],
-    location.admin1 && location.admin1 !== location.name
-      ? location.admin1
-      : null,
-    location.countryCode,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-}
 
 type LocationRowProps = {
   location: Location;

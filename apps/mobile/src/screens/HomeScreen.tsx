@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   Card,
+  Chip,
   DataUnavailable,
   ErrorState,
   Header,
@@ -19,6 +20,9 @@ import { SampleBanner } from '~/features/home/components/SampleBanner';
 import { formatMetric } from '~/features/home/format';
 import type { HomeClimate } from '~/features/home/types';
 import { useHomeClimate } from '~/features/home/useHomeClimate';
+import { formatPlace } from '~/features/locations/format';
+import { useSelectedLocationStore } from '~/features/locations/selectedLocationStore';
+import { LOCATION_LEVEL_LABELS } from '~/features/locations/types';
 import type { MainTabParamList } from '~/navigation/types';
 
 import { useStyles } from './HomeScreen.styles';
@@ -28,18 +32,41 @@ export type HomeScreenProps = BottomTabScreenProps<MainTabParamList, 'Home'>;
 export default function HomeScreen({ navigation }: HomeScreenProps) {
   const styles = useStyles();
   const { state, retry } = useHomeClimate();
+  const selected = useSelectedLocationStore(store => store.selected);
+
+  // Until the user picks a place, Home shows its default (the sample place).
+  let subtitle = 'Default location';
+  if (selected) {
+    subtitle = formatPlace(selected);
+  } else if (state.status === 'ready') {
+    subtitle = `${state.data.location.name}, ${state.data.location.country}`;
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.content}>
         <Header
           title="ClimateLens"
-          subtitle={
-            state.status === 'ready'
-              ? `${state.data.location.name}, ${state.data.location.country}`
-              : 'Default location'
+          subtitle={subtitle}
+          right={
+            <Chip
+              label="Change"
+              onPress={() => navigation.navigate('Explore')}
+              accessibilityHint="Opens Explore to choose a location"
+            />
           }
         />
+
+        {selected ? (
+          <Text variant="caption" muted>
+            {[
+              LOCATION_LEVEL_LABELS[selected.level],
+              selected.representativeNote,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </Text>
+        ) : null}
 
         {state.status === 'loading' ? <LoadingState /> : null}
 

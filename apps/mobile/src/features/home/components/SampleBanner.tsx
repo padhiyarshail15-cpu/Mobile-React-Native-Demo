@@ -12,7 +12,8 @@ export function SampleBanner() {
         SAMPLE DATA
       </Text>
       <Text variant="caption" style={styles.message}>
-        Not live NASA POWER values. Removed when the API is connected.
+        Not live NASA POWER values, and the same for every place until the API
+        is connected.
       </Text>
     </View>
   );

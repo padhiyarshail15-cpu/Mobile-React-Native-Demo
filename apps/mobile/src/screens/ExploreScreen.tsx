@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { FlatList, View } from 'react-native';
 
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -22,18 +23,25 @@ import {
   usePopularLocationsQuery,
 } from '~/features/locations/queries';
 import { useRecentsStore } from '~/features/locations/recentsStore';
+import { useSelectedLocationStore } from '~/features/locations/selectedLocationStore';
 import {
   LOCATION_LEVEL_LABELS,
   type Location,
   type LocationLevel,
 } from '~/features/locations/types';
 import { useDebouncedValue } from '~/hooks/useDebouncedValue';
+import type { MainTabParamList } from '~/navigation/types';
 
 import { useStyles } from './ExploreScreen.styles';
 
 export const SEARCH_DEBOUNCE_MS = 300;
 
-export default function ExploreScreen() {
+export type ExploreScreenProps = BottomTabScreenProps<
+  MainTabParamList,
+  'Explore'
+>;
+
+export default function ExploreScreen({ navigation }: ExploreScreenProps) {
   const styles = useStyles();
   const [text, setText] = useState('');
   const [type, setType] = useState<LocationLevel | undefined>();
@@ -42,6 +50,14 @@ export default function ExploreScreen() {
   const recents = useRecentsStore(state => state.recents);
   const addRecent = useRecentsStore(state => state.addRecent);
   const clearRecents = useRecentsStore(state => state.clearRecents);
+  const select = useSelectedLocationStore(state => state.select);
+
+  // Choosing a place selects it, remembers it, and returns to Home.
+  const chooseLocation = (location: Location) => {
+    select(location);
+    addRecent(location);
+    navigation.navigate('Home');
+  };
 
   const trimmed = text.trim();
   const debounced = useDebouncedValue(trimmed, SEARCH_DEBOUNCE_MS);
@@ -84,7 +100,7 @@ export default function ExploreScreen() {
             <LocationRow
               key={location.id}
               location={location}
-              onPress={addRecent}
+              onPress={chooseLocation}
             />
           ))}
         </View>
@@ -123,7 +139,7 @@ export default function ExploreScreen() {
         data={list.isError ? [] : rows}
         keyExtractor={location => String(location.id)}
         renderItem={({ item }) => (
-          <LocationRow location={item} onPress={addRecent} />
+          <LocationRow location={item} onPress={chooseLocation} />
         )}
         ListHeaderComponent={header}
         ListEmptyComponent={empty ?? undefined}

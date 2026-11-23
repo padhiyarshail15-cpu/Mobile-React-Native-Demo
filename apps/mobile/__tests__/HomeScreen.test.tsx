@@ -3,6 +3,8 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { fetchHomeClimate } from '../src/features/home/climateService';
 import { sampleHomeClimate } from '../src/features/home/sampleClimate';
 import type { HomeClimate } from '../src/features/home/types';
+import { useSelectedLocationStore } from '../src/features/locations/selectedLocationStore';
+import type { Location } from '../src/features/locations/types';
 import HomeScreen, { type HomeScreenProps } from '../src/screens/HomeScreen';
 import { renderWithProviders } from '../src/test-utils/renderWithProviders';
 
@@ -31,6 +33,7 @@ function renderHome() {
 describe('HomeScreen', () => {
   beforeEach(() => {
     mockedFetch.mockResolvedValue(sampleHomeClimate);
+    useSelectedLocationStore.setState({ selected: null });
   });
 
   it('shows the loading state before data arrives', () => {
@@ -112,5 +115,78 @@ describe('HomeScreen', () => {
     await screen.findByText('27.4 °C');
 
     expect(screen.getByRole('button', { name: 'History' })).toBeDisabled();
+  });
+
+  describe('selected location header', () => {
+    const mumbai: Location = {
+      id: 2,
+      name: 'Mumbai',
+      level: 'city',
+      countryCode: 'IN',
+      admin1: 'Maharashtra',
+      lat: 19.08,
+      lon: 72.88,
+      region: 'West India',
+      isPopular: true,
+      representativeNote: null,
+      coordinateSource: 'Seed data',
+    };
+
+    it('shows the default place before anything is selected', async () => {
+      renderHome();
+
+      expect(await screen.findByText('Ahmedabad, IN')).toBeOnTheScreen();
+    });
+
+    it('shows the selected place and its type', async () => {
+      useSelectedLocationStore.setState({ selected: mumbai });
+      renderHome();
+
+      expect(
+        await screen.findByText('Mumbai, Maharashtra, IN')
+      ).toBeOnTheScreen();
+      expect(screen.getByText('City')).toBeOnTheScreen();
+      expect(screen.queryByText('Ahmedabad, IN')).toBeNull();
+    });
+
+    it('discloses the representative point for a state', async () => {
+      useSelectedLocationStore.setState({
+        selected: {
+          ...mumbai,
+          id: 19,
+          name: 'Gujarat',
+          level: 'state',
+          admin1: 'Gujarat',
+          representativeNote:
+            'Representative point: state capital (Gandhinagar). Not a state-wide average.',
+        },
+      });
+      renderHome();
+
+      expect(await screen.findByText('Gujarat, IN')).toBeOnTheScreen();
+      expect(
+        screen.getByText(
+          'State · Representative point: state capital (Gandhinagar). Not a state-wide average.'
+        )
+      ).toBeOnTheScreen();
+    });
+
+    it('says the numbers are sample values for every place', async () => {
+      useSelectedLocationStore.setState({ selected: mumbai });
+      renderHome();
+
+      expect(
+        await screen.findByText(/the same for every place/)
+      ).toBeOnTheScreen();
+    });
+
+    it('opens Explore from the Change button', async () => {
+      const { navigate } = renderHome();
+      await screen.findByText('27.4 °C');
+
+      fireEvent.press(screen.getByRole('button', { name: 'Change' }));
+
+      expect(navigate).toHaveBeenCalledWith('Explore');
+    });
   });
 });
