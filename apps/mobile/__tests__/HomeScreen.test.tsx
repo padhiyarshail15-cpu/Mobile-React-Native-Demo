@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 
 import { fetchHomeClimate } from '../src/features/home/climateService';
 import { sampleHomeClimate } from '../src/features/home/sampleClimate';
 import type { HomeClimate } from '../src/features/home/types';
 import HomeScreen, { type HomeScreenProps } from '../src/screens/HomeScreen';
+import { renderWithProviders } from '../src/test-utils/renderWithProviders';
 
 jest.mock(
   'react-native-safe-area-context',
@@ -21,7 +22,9 @@ const mockedFetch = fetchHomeClimate as jest.MockedFunction<
 function renderHome() {
   const navigate = jest.fn();
   const navigation = { navigate } as unknown as HomeScreenProps['navigation'];
-  render(<HomeScreen navigation={navigation} route={{} as never} />);
+  renderWithProviders(
+    <HomeScreen navigation={navigation} route={{} as never} />
+  );
   return { navigate };
 }
 

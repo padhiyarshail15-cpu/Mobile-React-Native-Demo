@@ -1,7 +1,8 @@
 import { NavigationContainer } from '@react-navigation/native';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, screen } from '@testing-library/react-native';
 
 import RootNavigator from '../src/navigation/RootNavigator';
+import { renderWithProviders } from '../src/test-utils/renderWithProviders';
 
 jest.mock(
   'react-native-safe-area-context',
@@ -9,7 +10,7 @@ jest.mock(
 );
 
 function renderNavigation() {
-  return render(
+  return renderWithProviders(
     <NavigationContainer>
       <RootNavigator />
     </NavigationContainer>

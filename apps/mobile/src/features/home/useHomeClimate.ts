@@ -1,37 +1,29 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+
+import { queryKeys } from '~/api/queryKeys';
 
 import { fetchHomeClimate } from './climateService';
 import type { HomeClimateState } from './types';
 
+// Server state comes from React Query. The shape HomeScreen reads is unchanged.
 export function useHomeClimate() {
-  const [state, setState] = useState<HomeClimateState>({ status: 'loading' });
-  const [attempt, setAttempt] = useState(0);
+  const query = useQuery({
+    queryKey: queryKeys.climate.home(),
+    queryFn: fetchHomeClimate,
+  });
 
-  useEffect(() => {
-    let active = true;
-    setState({ status: 'loading' });
-
-    fetchHomeClimate()
-      .then(data => {
-        if (active) {
-          setState({ status: 'ready', data });
-        }
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setState({
-            status: 'error',
-            message: error instanceof Error ? error.message : 'Unknown error',
-          });
-        }
-      });
-
-    return () => {
-      active = false;
+  let state: HomeClimateState;
+  if (query.isPending) {
+    state = { status: 'loading' };
+  } else if (query.isError) {
+    state = {
+      status: 'error',
+      message:
+        query.error instanceof Error ? query.error.message : 'Unknown error',
     };
-  }, [attempt]);
+  } else {
+    state = { status: 'ready', data: query.data };
+  }
 
-  const retry = useCallback(() => setAttempt(count => count + 1), []);
-
-  return { state, retry };
+  return { state, retry: () => void query.refetch() };
 }
