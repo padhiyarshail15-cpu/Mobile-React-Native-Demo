@@ -29,7 +29,8 @@ pipeline {
   }
 
   parameters {
-    // All default to false. main always builds both apps; publishing only ever happens from a manual run.
+    // All default to false. While MOBILE_BUILDS_ENABLED is 'false' (see environment) none of these produce an APK/IPA.
+    // When enabled: main always builds both apps; publishing only ever happens from a manual run.
     booleanParam(name: 'BUILD_ANDROID', defaultValue: false, description: 'Build the Android APK on any branch (main always does)')
     booleanParam(name: 'BUILD_IOS', defaultValue: false, description: 'Build the iOS simulator app on any branch (main always does)')
     booleanParam(name: 'DISTRIBUTE_ANDROID', defaultValue: false, description: 'Manual runs only: build a release-signed prod APK and upload it to Firebase App Distribution (needs the android-* release keystore credentials)')
@@ -37,6 +38,8 @@ pipeline {
   }
 
   environment {
+    // Master switch for every APK/IPA stage below. Set to 'true' to turn builds and distribution back on.
+    MOBILE_BUILDS_ENABLED = 'false'
     CI = 'true'
     HUSKY = '0' // git hooks are for developer machines, not CI
     FASTLANE_SKIP_UPDATE_CHECK = '1'
@@ -91,9 +94,12 @@ pipeline {
 
     stage('Android APK Build (main or BUILD_ANDROID)') {
       when {
-        anyOf {
-          branch 'main'
-          expression { params.BUILD_ANDROID }
+        allOf {
+          expression { env.MOBILE_BUILDS_ENABLED == 'true' }
+          anyOf {
+            branch 'main'
+            expression { params.BUILD_ANDROID }
+          }
         }
       }
       steps {
@@ -113,6 +119,7 @@ pipeline {
     stage('Android Firebase Distribution (manual, DISTRIBUTE_ANDROID)') {
       when {
         allOf {
+          expression { env.MOBILE_BUILDS_ENABLED == 'true' }
           expression { params.DISTRIBUTE_ANDROID }
           triggeredBy 'UserIdCause'
         }
@@ -145,9 +152,12 @@ pipeline {
 
     stage('iOS Simulator Build (main or BUILD_IOS)') {
       when {
-        anyOf {
-          branch 'main'
-          expression { params.BUILD_IOS }
+        allOf {
+          expression { env.MOBILE_BUILDS_ENABLED == 'true' }
+          anyOf {
+            branch 'main'
+            expression { params.BUILD_IOS }
+          }
         }
       }
       steps {
@@ -168,6 +178,7 @@ pipeline {
     stage('iOS Firebase Distribution (manual, DISTRIBUTE_IOS)') {
       when {
         allOf {
+          expression { env.MOBILE_BUILDS_ENABLED == 'true' }
           expression { params.DISTRIBUTE_IOS }
           triggeredBy 'UserIdCause'
         }

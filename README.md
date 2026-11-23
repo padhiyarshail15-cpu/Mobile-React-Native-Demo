@@ -131,7 +131,7 @@ You've successfully run and modified your React Native App. :partying_face:
 
 # CI/CD
 
-Jenkins runs format, lint, typecheck and Jest on every branch, and publishes JUnit results. On `main` or from **Build with Parameters** (`BUILD_ANDROID`, `BUILD_IOS`), Fastlane builds the Android APK and the iOS simulator app. Publishing to Firebase App Distribution is manual only: start a build with **Build with Parameters** and tick `DISTRIBUTE_ANDROID` or `DISTRIBUTE_IOS` (iOS needs an iPhone registered to the Apple team).
+Jenkins runs format, lint, typecheck and Jest on every branch, and publishes JUnit results. **APK/IPA builds are currently switched off** (`MOBILE_BUILDS_ENABLED = 'false'` in the [`Jenkinsfile`](./Jenkinsfile) `environment` block); set it to `'true'` to turn them back on. When enabled, on `main` or from **Build with Parameters** (`BUILD_ANDROID`, `BUILD_IOS`), Fastlane builds the Android APK and the iOS simulator app. Publishing to Firebase App Distribution is manual only: start a build with **Build with Parameters** and tick `DISTRIBUTE_ANDROID` or `DISTRIBUTE_IOS` (iOS needs an iPhone registered to the Apple team).
 
 - Jenkins pipeline: [`Jenkinsfile`](./Jenkinsfile)
 - Fastlane lanes: [`apps/mobile/fastlane/`](./apps/mobile/fastlane) (`ios simulator|build|distribute`, `android build|distribute`, each with `variant:dev|prod`)
