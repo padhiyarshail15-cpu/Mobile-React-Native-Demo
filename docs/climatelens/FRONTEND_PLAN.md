@@ -48,7 +48,9 @@ apps/mobile/src/
   features/
     dashboard/ locations/ climate-history/ comparison/ climate-map/ climate-ai/ academy/ actions/
       (screens/, components/, queries.ts (React Query hooks), service.ts (Axios calls + envelope check), store/)
-  api/            queryClient.ts, queryKeys.ts, renderWithProviders (test helper)
+  api/            httpClient.ts, errorMapper.ts, queryClient.ts, queryKeys.ts
+  test-utils/     renderWithProviders (test helper; keeps testing-library out of src/api)
+  hooks/          shared hooks (useDebouncedValue)
   components/     app-specific shared pieces (SourceBadge, DataTypeTag, ResolutionNote, StateViews)
   services/       httpClient.ts, errorMapper.ts
   theme/          colors, typography, spacing (tokens from design images)
@@ -113,7 +115,7 @@ Shared `SourceBadge`/`DataTypeTag`/`ResolutionNote` components must show: source
 
 ### Week 2 — Locations
 
-- **W2D3 Thu 26 Nov** — Install `@tanstack/react-query` (mobile only); `queryClient` + `QueryClientProvider` in `AppContainer`, `queryKeys`, `renderWithProviders`. `httpClient` (baseURL from Config, timeout, error mapper incl. "server waking up"; retry owned by React Query), persisted Zustand stores (settings, locations/recents), Explore screen via `useQuery`: debounced search (`enabled` when `q.length >= 2`, `placeholderData: keepPreviousData`), type-filter sheet, Popular, Recents, no-results/error states. Refactor `useHomeClimate` to `useQuery` (still sample data until W3D4) and keep Home states/tests green.
+- **W2D3 Thu 26 Nov** — Install `@tanstack/react-query` (mobile only); `queryClient` + `QueryClientProvider` in `AppContainer`, `queryKeys`, `renderWithProviders`. `httpClient` (baseURL from Config, timeout, error mapper incl. "server waking up"; retry owned by React Query), persisted Zustand stores (settings, locations/recents), Explore screen via `useQuery`: debounced search (`enabled` when `q.length >= 2`, `placeholderData: keepPreviousData`), type-filter sheet, Popular, Recents, no-results/error states. Refactor `useHomeClimate` to `useQuery` (still sample data until W3D4) and keep Home states/tests green. _Done (verified on the iOS simulator against the local API). Deviations: the settings store is deferred until a screen reads it (Profile, W7/W8); the filter sheet is type-only because region options need a `GET /locations/regions` endpoint; tapping a result only adds it to Recents until W2D4 adds selection; Android not run yet._
 - **W2D4 Fri 27 Nov** — Select Location flow + selected-location header (name, level, resolution note), "Use my location" (`useNearestLocationQuery`, enabled only after permission + coords → `/locations/nearest`, "not supported" message), location detail query, persist selection in Zustand, tests (valid, empty, ambiguous, network failure, permission denied).
 - **W2D5 Mon 30 Nov** — (buffer) test against deployed Render API on both platforms.
 
