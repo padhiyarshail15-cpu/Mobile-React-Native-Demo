@@ -1,3 +1,4 @@
+import pino from 'pino';
 import request from 'supertest';
 
 import { createApp } from './app';
@@ -71,5 +72,32 @@ describe('security headers and CORS', () => {
       'http://localhost:8081'
     );
     expect(denied.headers['access-control-allow-origin']).toBeUndefined();
+  });
+});
+
+describe('request logging', () => {
+  it('keeps coordinates out of the request log', async () => {
+    const lines: string[] = [];
+    const logger = pino(
+      { level: 'info' },
+      {
+        write: (line: string) => {
+          lines.push(line);
+        },
+      }
+    );
+    const app = createApp({
+      corsOrigins: [],
+      logger,
+      locations: unusedLocations,
+    });
+
+    await request(app).get('/api/v1/locations/nearest?lat=23.02&lon=72.57');
+
+    const logged = lines.join('');
+    expect(logged).toContain('/api/v1/locations/nearest');
+    expect(logged).toContain('[redacted]');
+    expect(logged).not.toContain('23.02');
+    expect(logged).not.toContain('72.57');
   });
 });

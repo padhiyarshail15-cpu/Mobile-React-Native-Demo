@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 
 import type { Logger } from './config/logger';
+import { redactUrl } from './config/redactUrl';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import type { LocationsService } from './modules/locations/locations.service';
 import { createApiRouter } from './routes';
@@ -27,7 +28,11 @@ export function createApp({
     pinoHttp({
       logger,
       serializers: {
-        req: req => ({ id: req.id, method: req.method, url: req.url }),
+        req: req => ({
+          id: req.id,
+          method: req.method,
+          url: redactUrl(req.url ?? ''),
+        }),
         res: res => ({ statusCode: res.statusCode }),
       },
     })
