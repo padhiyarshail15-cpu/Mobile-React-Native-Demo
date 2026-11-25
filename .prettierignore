@@ -7,3 +7,5 @@ ios
 android
 yarn.lock
 **/fastlane/README.md
+# Raw provider responses are kept byte-for-byte as received
+apps/api/src/providers/nasa-power/fixtures
