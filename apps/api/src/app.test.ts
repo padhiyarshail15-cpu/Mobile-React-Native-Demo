@@ -78,7 +78,7 @@ describe('security headers and CORS', () => {
 describe('request logging', () => {
   it('keeps coordinates out of the request log', async () => {
     const lines: string[] = [];
-    const logger = pino(
+    const captureLogger = pino(
       { level: 'info' },
       {
         write: (line: string) => {
@@ -88,7 +88,7 @@ describe('request logging', () => {
     );
     const app = createApp({
       corsOrigins: [],
-      logger,
+      logger: captureLogger,
       locations: unusedLocations,
     });
 
