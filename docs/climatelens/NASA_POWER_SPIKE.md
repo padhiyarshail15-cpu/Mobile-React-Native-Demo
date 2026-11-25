@@ -8,9 +8,11 @@ Status: done 2026-11-25. Source of truth for W3D2 (ingestion) and W3D3 (analysis
 
 ## 1. Verdict
 
-NASA POWER works for the MVP. One request returns 45 years of monthly data for all five variables in about 1.5 s
-(43 KB), the 1991-2020 baseline is complete for every variable at all nine locations I tested, the licence is open, and
-no key is needed. **But three assumptions in the current plan are wrong and need decisions** (section 8).
+NASA POWER works for the MVP. One request returns the whole history from 1981 up to the latest published month, for all
+five variables, in about 1.5 s (about 44 KB). The range is **dynamic, not fixed**: the document's "1981-2025" is only the
+range of the saved fixture (section 5.1 explains how the app should ask for it). The 1991-2020 baseline is complete for
+every variable at all nine locations I tested, the licence is open, and no key is needed. **But three assumptions in the
+current plan are wrong and need decisions** (section 8).
 
 ## 2. The request
 
@@ -25,7 +27,8 @@ GET https://power.larc.nasa.gov/api/temporal/monthly/point
 - `community=RE` (renewable energy) chosen because it returns solar in kWh/m2/day. Units depend on the community, so the
   community is part of the contract. [docs: "units tailored to the selected community"; measured for RE]
 - `start` and `end` are years. An `end` beyond the data returns **HTTP 422** (see the error shape in section 6).
-  [measured]
+  [measured] `end=1981..2025` in this document's examples is just the range I saved; the code must use the **current
+  year** as `end` (section 5.1).
 
 ## 3. The five variables
 
@@ -87,15 +90,42 @@ All measured and pinned by tests:
 
 ## 5. Coverage and gaps
 
-| Question                           | Answer                                                                                                                                                                                                                     |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| First year                         | Meteorology 1981, solar 1984. Solar for 1981-1983 is `-999` in every month. [measured, docs]                                                                                                                               |
-| 1991-2020 baseline                 | **Complete: 360 of 360 months for all five variables** at Ahmedabad, London, Singapore, Sydney, Sao Paulo, Dubai, Lagos, Kochi, Tokyo. [measured]                                                                          |
-| Last complete year                 | 2025 (its annual key exists). [measured]                                                                                                                                                                                   |
-| **Current year (2026)**            | **Partial.** Meteorology available through September 2026, solar through July. Later months are `-999`. **No `202613` annual key.** [measured]                                                                             |
-| Docs vs reality on the latest data | Docs say meteorology runs to "the previous year" [docs]; in practice it ran to within about two months of today. [measured]                                                                                                |
-| Latency                            | 2-3 days for meteorology and 5-7 days for solar in near-real time [docs]; the monthly series lags more (above).                                                                                                            |
-| Is the archive stable?             | **No.** NASA says it "actively changes/updates with bias corrections, model updates, and error fixes", and recent meteorology is replaced by improved data 2-3 months after real time. [docs] So recent months can change. |
+| Question                           | Answer                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| First year                         | Meteorology 1981, solar 1984. Solar for 1981-1983 is `-999` in every month. [measured, docs]                                                                                                                                                                                                                                                                              |
+| 1991-2020 baseline                 | **Complete: 360 of 360 months for all five variables** at Ahmedabad, London, Singapore, Sydney, Sao Paulo, Dubai, Lagos, Kochi, Tokyo. [measured]                                                                                                                                                                                                                         |
+| Last complete year                 | 2025 (its annual key exists). [measured]                                                                                                                                                                                                                                                                                                                                  |
+| **Current year (2026)**            | **Partial.** Meteorology available through September 2026, solar through July. Later months are `-999`. **No `202613` annual key.** [measured]                                                                                                                                                                                                                            |
+| Latest month available             | **Not "last month".** On 2026-11-25 a request `start=1981&end=2026` returned data to **September 2026** for temperature, rain, humidity and wind (about 2 months behind) and to **July 2026** for solar (about 4 months behind). The response header says `end: 20261130` (the end of the current month), but the months after the last real value are `-999`. [measured] |
+| Docs vs reality on the latest data | Docs say meteorology runs to "the previous year" [docs]; in practice it ran to within about two months of today. [measured]                                                                                                                                                                                                                                               |
+| Latency                            | 2-3 days for meteorology and 5-7 days for solar in near-real time [docs]; the monthly series lags more (above).                                                                                                                                                                                                                                                           |
+| Is the archive stable?             | **No.** NASA says it "actively changes/updates with bias corrections, model updates, and error fixes", and recent meteorology is replaced by improved data 2-3 months after real time. [docs] So recent months can change.                                                                                                                                                |
+
+### 5.1 How the range must be requested (dynamic)
+
+Never hard-code `2025`, or any year. The data grows every month, so:
+
+1. **`start` is fixed at 1981** (the first year of meteorology). The baseline 1991-2020 is also fixed. Both are constants.
+2. **`end` is the current calendar year**, taken from the clock at run time (`new Date().getFullYear()`). Asking for
+   the current year is accepted; asking for next year returns HTTP 422. Treat a 422 on `end` as "step back one year and
+   retry", not as a crash (it can happen around New Year if the server clock differs).
+3. **The latest real month is found from the data, not from the clock.** For each variable, the latest month is the last
+   `YYYYMM` key (ignoring the `13` annual keys) whose value is not `-999`. Store only real values; leave the missing
+   months out or as `NULL` rows, but never as `0`.
+4. **The latest month differs per variable** (September for meteorology, July for solar on 2026-11-25), so provenance
+   must say "data to <month>" per variable, not one date for everything.
+5. **Refresh monthly, and re-fetch the recent past.** NASA replaces recent meteorology 2-3 months after real time and
+   corrects the archive over time (section 5, last row). So each refresh re-requests the whole range (or at least the last
+   3 years) and **updates existing rows**, not just appends new ones. The upsert key
+   `(location_id, dataset_id, period_start, granularity)` already allows this.
+6. **A year is "complete" only when it has all 12 real months for that variable.** Annual values are computed from the
+   months we hold, and only for complete years; the current year is reported as year-to-date (section 8A).
+7. **The app must not hard-code the year either.** The Home sample says `2026`; the real value comes from the API
+   (`latestMonth`, `latestCompleteYear`). The fixtures contain `1981-2025` and `45 * 13`; those numbers belong to the
+   fixtures only, which is why the tests that mention them read the saved files and never call the live API.
+
+Why not simply ask for "last month"? Because last month usually is not published yet (section 5). Asking for the
+current year and reading the last real value is the one method that stays correct as the lag changes.
 
 ## 6. Limits, errors and etiquette
 
@@ -152,14 +182,15 @@ ourselves, so a partial year never gets an invented annual value.
 
 ## 9. What W3D2 should do with this
 
-1. `providers/nasa-power/client.ts`: one GET per location, 1 s throttle, retry 429 and 5xx, map 422 to a clear error,
-   send `community=RE`.
+1. `providers/nasa-power/client.ts`: one GET per location with `start=1981&end=<current year>` (never a hard-coded
+   year; section 5.1), 1 s throttle, retry 429 and 5xx, map 422 to a clear error, send `community=RE`.
 2. `normalise.ts`: split `YYYYMM`; **drop the `13` keys** (compute annual ourselves); `-999` becomes `NULL`; keep real
    `0`; keep lon/lat/elevation order straight; check each unit against the expected unit and fail loudly if it differs.
 3. Migrations: `climate_observations` (as planned) and **004** for `satellite_derived`.
 4. Insert the five `datasets` rows from sections 3 and 7, with the real source URL, attribution and limitations.
 5. Ingestion script: sequential, resumable, idempotent upsert on `(location_id, dataset_id, period_start, granularity)`;
-   store `retrieved_at` and the API version.
+   store `retrieved_at` and the API version. It is **re-runnable**: run it monthly, and each run refreshes recent
+   months as well as adding new ones (section 5.1, item 5). Record per variable the latest real month it found.
 6. Tests use these fixtures. CI never calls NASA.
 
 ## 10. Reproduce
