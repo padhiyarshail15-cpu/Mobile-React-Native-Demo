@@ -62,3 +62,30 @@ cd apps/api && TEST_DATABASE_URL="$(grep '^DATABASE_URL=' .env | cut -d= -f2-)" 
 `src/modules/locations/`: `routes` (HTTP + validation) → `service` (rules) → `repository` (SQL). `src/server.ts` is the only place real dependencies are created.
 
 Environment variables are validated at startup in [env.ts](./src/config/env.ts). Invalid values stop the server with a clear message. See [.env.example](./.env.example) for the full list.
+
+## Deploying to Render
+
+The service is described in [render.yaml](../../render.yaml) at the repository root. Render builds from the branch you create the Blueprint from (use `main`).
+
+| Setting       | Value                                                                                |
+| ------------- | ------------------------------------------------------------------------------------ |
+| Build command | `corepack enable && yarn workspaces focus api && yarn workspace api build`           |
+| Start command | `node apps/api/dist/server.js`                                                       |
+| Health check  | `GET /api/v1/health`                                                                 |
+| Region / plan | Singapore (closest to the Supabase database) / Free                                  |
+| Variables     | `NODE_VERSION=22`, `PORT=10000`, `LOG_LEVEL=info`, `DATABASE_URL` (secret, prompted) |
+
+Steps (once):
+
+1. Merge to `main` and push.
+2. Render Dashboard > **New** > **Blueprint** > connect this repository, branch `main`.
+3. When prompted, paste `DATABASE_URL` (the Supabase **session pooler** string). It is stored only in Render.
+4. Wait for the first deploy, then check `https://<service>.onrender.com/api/v1/health`.
+
+Notes:
+
+- **Migrations are not run on deploy.** Run `yarn workspace api migrate` from your machine, against the same `DATABASE_URL`, before deploying code that needs a new migration. Every environment shares one Supabase project for now.
+- **Free tier:** the service sleeps after 15 minutes without traffic and takes about a minute to wake. The mobile app allows 60 seconds and shows a "server is waking up" message.
+- **CORS:** `CORS_ORIGINS` is left empty on purpose. The mobile app is not a browser, so CORS does not apply to it.
+- **Logs:** request URLs are logged with `lat` and `lon` redacted. Check them under the service's **Logs** tab.
+- **Trying the production build locally:** `yarn workspace api build`, then `node apps/api/dist/server.js` from the repository root with the same variables.

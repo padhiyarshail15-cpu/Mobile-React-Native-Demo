@@ -96,7 +96,7 @@ RATE_LIMIT_ASK_PER_DAY=
 
 - **W2D1 Tue 24 Nov** — Supabase project; pooler URL; `pool.ts`; migrations for `locations`, `datasets`; migration runner script; RLS on.
 - **W2D2 Wed 25 Nov** — Seed 30–50 locations (clearly labelled seed, lat/lon from a verified source; `is_popular`, `region`); `search` (name/ILIKE, ranking, `type`/`region` filters, limit), `popular`, `nearest` (haversine, 150 km cut-off) and `detail`; Zod validation; tests: valid, no results, ambiguous, invalid input, filter combos, nearest out-of-range, DB error.
-- **W2D5 Mon 30 Nov** — (buffer) Render deploy (root `apps/api`, build/start commands, env vars), verify `/health`; CORS; document.
+- **W2D5 Mon 30 Nov** — (buffer) Render deploy (root `apps/api`, build/start commands, env vars), verify `/health`; CORS; document. _Prepared (not yet deployed): [render.yaml](../../render.yaml) Blueprint, README section, and the build + start flow verified in a clean clone with `NODE_ENV=production` (build 21 s, all endpoints, clean SIGTERM exit). Deviations: the Render root directory is left blank (the repo root), not `apps/api`, because Yarn needs the root `yarn.lock` and workspace files; the build uses `yarn workspaces focus api` so React Native's dependencies are not installed; region is Singapore (Render has no Mumbai); CORS stays empty because the native app is not a browser. Done when `/health` and `/locations/search` answer on the public URL and the app has been run against it._
 
 ### Week 3 — NASA POWER (riskiest; protect this week)
 
