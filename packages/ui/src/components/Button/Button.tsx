@@ -4,7 +4,11 @@ import type {
   TextStyle,
   ViewStyle,
 } from 'react-native';
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, Text } from 'react-native';
+
+import { colors } from '../../theme';
+
+import { useStyles } from './Button.styles';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -29,17 +33,20 @@ export function Button({
   textStyle,
   ...rest
 }: ButtonProps) {
+  const styles = useStyles();
   const isDisabled = disabled || loading;
 
   return (
     <Pressable
       accessibilityRole="button"
+      // While loading the title is replaced by a spinner, so keep the name for screen readers.
+      accessibilityLabel={title}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.base,
-        sizeStyles[size],
-        variantStyles[variant],
+        styles.sizes[size],
+        styles.variants[variant],
         pressed && styles.pressed,
         isDisabled && styles.disabled,
         style,
@@ -51,7 +58,7 @@ export function Button({
         <Text
           style={[
             styles.label,
-            labelSizeStyles[size],
+            styles.labelSizes[size],
             { color: labelColors[variant] },
             textStyle,
           ]}>
@@ -63,44 +70,7 @@ export function Button({
 }
 
 const labelColors: Record<ButtonVariant, string> = {
-  primary: '#FFFFFF',
-  secondary: '#FFFFFF',
-  outline: '#2563EB',
+  primary: colors.card,
+  secondary: colors.primary,
+  outline: colors.primary,
 };
-
-const styles = StyleSheet.create({
-  base: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  label: {
-    fontWeight: '600',
-  },
-  pressed: {
-    opacity: 0.8,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-});
-
-const variantStyles = StyleSheet.create({
-  primary: { backgroundColor: '#2563EB' },
-  secondary: { backgroundColor: '#4B5563' },
-  outline: { backgroundColor: 'transparent', borderColor: '#2563EB' },
-});
-
-const sizeStyles = StyleSheet.create({
-  sm: { paddingVertical: 6, paddingHorizontal: 12, minHeight: 32 },
-  md: { paddingVertical: 10, paddingHorizontal: 16, minHeight: 44 },
-  lg: { paddingVertical: 14, paddingHorizontal: 20, minHeight: 52 },
-});
-
-const labelSizeStyles = StyleSheet.create({
-  sm: { fontSize: 14 },
-  md: { fontSize: 16 },
-  lg: { fontSize: 18 },
-});

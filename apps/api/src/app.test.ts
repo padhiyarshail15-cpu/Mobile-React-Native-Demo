@@ -1,0 +1,103 @@
+import pino from 'pino';
+import request from 'supertest';
+
+import { createApp } from './app';
+import { createLogger } from './config/logger';
+import type { LocationsService } from './modules/locations/locations.service';
+
+const logger = createLogger('silent');
+
+const unusedLocations: LocationsService = {
+  search: jest.fn(),
+  popular: jest.fn(),
+  nearest: jest.fn(),
+  getById: jest.fn(),
+};
+
+function buildApp(corsOrigins: string[] = []) {
+  return createApp({ corsOrigins, logger, locations: unusedLocations });
+}
+
+describe('GET /api/v1/health', () => {
+  it('returns the ok envelope', async () => {
+    const res = await request(buildApp()).get('/api/v1/health');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({ status: 'ok' });
+    expect(typeof res.body.meta.timestamp).toBe('string');
+  });
+});
+
+describe('error responses', () => {
+  it('returns a NOT_FOUND envelope for unknown routes', async () => {
+    const res = await request(buildApp()).get('/api/v1/unknown');
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toEqual({
+      code: 'NOT_FOUND',
+      message: 'Route GET /api/v1/unknown not found',
+    });
+  });
+
+  it('returns a BAD_REQUEST envelope for malformed JSON', async () => {
+    const res = await request(buildApp())
+      .post('/api/v1/health')
+      .set('Content-Type', 'application/json')
+      .send('{"broken":');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('BAD_REQUEST');
+  });
+});
+
+describe('security headers and CORS', () => {
+  it('sets helmet security headers', async () => {
+    const res = await request(buildApp()).get('/api/v1/health');
+
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+    expect(res.headers['x-powered-by']).toBeUndefined();
+  });
+
+  it('allows configured origins only', async () => {
+    const app = buildApp(['http://localhost:8081']);
+
+    const allowed = await request(app)
+      .get('/api/v1/health')
+      .set('Origin', 'http://localhost:8081');
+    const denied = await request(app)
+      .get('/api/v1/health')
+      .set('Origin', 'https://evil.example');
+
+    expect(allowed.headers['access-control-allow-origin']).toBe(
+      'http://localhost:8081'
+    );
+    expect(denied.headers['access-control-allow-origin']).toBeUndefined();
+  });
+});
+
+describe('request logging', () => {
+  it('keeps coordinates out of the request log', async () => {
+    const lines: string[] = [];
+    const logger = pino(
+      { level: 'info' },
+      {
+        write: (line: string) => {
+          lines.push(line);
+        },
+      }
+    );
+    const app = createApp({
+      corsOrigins: [],
+      logger,
+      locations: unusedLocations,
+    });
+
+    await request(app).get('/api/v1/locations/nearest?lat=23.02&lon=72.57');
+
+    const logged = lines.join('');
+    expect(logged).toContain('/api/v1/locations/nearest');
+    expect(logged).toContain('[redacted]');
+    expect(logged).not.toContain('23.02');
+    expect(logged).not.toContain('72.57');
+  });
+});
