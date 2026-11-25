@@ -109,7 +109,7 @@ Shared `SourceBadge`/`DataTypeTag`/`ResolutionNote` components must show: source
 ### Week 1 — Foundation
 
 - **W1D1 Tue 17 Nov** — Verify `yarn ios` / `yarn android` build, Pods, JDK; install navigation deps; dynamic (component-based) React Navigation: root native-stack → 4-tab bottom navigator (Home, Explore, AI, Profile); first tab = Home placeholder; remove debug `console.log` in HomeScreen. _Done when:_ app launches on both platforms, tabs switch, Home placeholder shows. Commit as soon as it runs.
-- **W1D3 Thu 19 Nov** — Theme tokens + Inter font from mockup `1000524102`; `Text`, `Button` (primary/secondary), `Card`, `Chip`, `Header`, tab bar with lucide icons, `LoadingState/ErrorState/EmptyState/DataUnavailable` in `packages/ui`; tests.
+- **W1D3 Thu 19 Nov** — Theme tokens + Inter font from mockup `1000524102`; `Text`, `Button` (primary/secondary), `Card`, `Chip`, `Header`, tab bar with lucide icons, `LoadingState/ErrorState/EmptyState/DataUnavailable` in `packages/ui`; tests. _Done except two items that were **deferred** because they need native changes: the **Inter font** and the **Lucide icons / tab bar icons** (the tab bar still shows the default placeholder icons). Both are now scheduled in the "Icons and font slot" before W3D4._
 - **W1D4 Fri 20 Nov** — Home dashboard shell: climate card, metric tiles, Climate Insight, quick actions, SAMPLE DATA banner, three states; Jest tests; README commands. (App opens directly on Home with a default location; onboarding comes in W8.)
 - **W1D5 Mon 23 Nov** — (buffer) fix platform issues, commit; update README.
 
@@ -121,6 +121,11 @@ Shared `SourceBadge`/`DataTypeTag`/`ResolutionNote` components must show: source
 
 ### Week 3 — First real dataset
 
+- **Icons and font slot (FE, one session, after W3D3 and before W3D4)** — Closes the two items deferred from W1D3.
+  1. **Lucide icons:** install `lucide-react-native` + `react-native-svg` in `apps/mobile` only; `pod install`; icons (outline, filled when active) for the four tabs and the Home quick-action chips; an `Icon` wrapper in `packages/ui` that takes the icon component as a prop (so `packages/ui` does not import the SVG library and the two-React rule is kept). `react-native-svg` is also what W4D2's charts need, so this doubles as the early compatibility check on RN 0.88 (new architecture).
+  2. **Inter font:** add Inter (SIL Open Font License) Regular and SemiBold, link on iOS (`UIAppFonts`) and Android (`assets/fonts`), change `typography` tokens from `fontWeight` to named families (`Inter-Regular`, `Inter-SemiBold`; Android ignores `fontWeight` for custom fonts), fall back to the system font.
+  3. Tests for the icon wrapper and tokens; run on iOS; compile Android (run it once an emulator exists). Commit each part as soon as it runs.
+     _Done when:_ the tab bar and quick actions show Lucide icons, text renders in Inter on iOS, Android compiles, and `yarn workspace mobile test` and `@repo/ui` tests pass. If `react-native-svg` fails on RN 0.88, stop and record it as a risk for W4D2 (the chart fallback is already planned).
 - **W3D4 Fri 4 Dec** — Replace mock with `useClimateSummaryQuery` / `useClimateIndicatorsQuery` (`/climate/summary` + `/indicators`) on Home and Location Details (Overview · History · Metrics tabs): metric cards (annual mean temp, anomaly vs 1991–2020, annual rainfall, humidity, wind, solar), server-provided insight text, SourceBadge panel, loading/error/unavailable states; remove SAMPLE DATA.
 - **W3D5 Mon 7 Dec** — (buffer) compare on-screen numbers with provider values; fix units/rounding.
 
